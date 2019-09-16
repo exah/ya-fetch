@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "./esm",
+    "module": "esnext",
+    "target": "es5",
+    "lib": ["es2017", "es6", "dom"],
+    "sourceMap": true,
+    "moduleResolution": "node",
+    "strict": true,
+    "importHelpers": true,
+    "strictNullChecks": false,
+    "esModuleInterop": true
+  },
+  "exclude": ["node_modules"],
+  "include": ["./"]
+}

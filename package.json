@@ -1,0 +1,72 @@
+{
+  "name": "simpler-fetch",
+  "version": "0.0.0",
+  "description": "",
+  "author": "John Grishin <hi@johngrish.in>",
+  "license": "MIT",
+  "repository": "exah/simpler-fetch",
+  "sideEffects": false,
+  "main": "cjs/index.js",
+  "module": "esm/index.js",
+  "files": [
+    "./esm",
+    "./cjs"
+  ],
+  "scripts": {
+    "build": "run-s build:*",
+    "build:esm": "tsc",
+    "build:cjs": "tsc -m commonjs --outDir ./cjs",
+    "test": "jest",
+    "lint": "eslint --ext ts --ext js ."
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "eslintConfig": {
+    "parser": "@typescript-eslint/parser",
+    "env": {
+      "jest/globals": true
+    },
+    "plugins": [
+      "jest",
+      "prettier"
+    ],
+    "extends": [
+      "standard",
+      "prettier"
+    ],
+    "rules": {
+      "prettier/prettier": 2,
+      "no-shadow": 2
+    }
+  },
+  "auto-changelog": {
+    "commitLimit": false,
+    "template": ".changelog.hbs"
+  },
+  "jest": {
+    "preset": "ts-jest"
+  },
+  "devDependencies": {
+    "@types/eslint": "^6.1.1",
+    "@types/eslint-plugin-prettier": "^2.2.0",
+    "@types/jest": "^24.0.18",
+    "@types/prettier": "^1.18.2",
+    "@typescript-eslint/parser": "^2.2.0",
+    "eslint": "^6.4.0",
+    "eslint-config-prettier": "^6.3.0",
+    "eslint-config-standard": "^14.1.0",
+    "eslint-plugin-import": "^2.18.2",
+    "eslint-plugin-node": "^10.0.0",
+    "eslint-plugin-prettier": "^3.1.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-standard": "^4.0.1",
+    "jest": "^24.9.0",
+    "nock": "^11.3.4",
+    "npm-run-all": "^4.1.5",
+    "prettier": "^1.18.2",
+    "ts-jest": "^24.1.0",
+    "typescript": "^3.6.3"
+  },
+  "dependencies": {}
+}
