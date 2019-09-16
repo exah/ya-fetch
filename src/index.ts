@@ -1,7 +1,7 @@
 type RequestMethods = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'HEAD' | 'DELETE'
 type ContentTypes = 'json' | 'text' | 'formData' | 'arrayBuffer' | 'blob'
 
-type BodyMethodsPromise = Promise<Response> &
+type RequestPromise = Promise<Response> &
   Partial<Record<ContentTypes, <T>() => Promise<T>>>
 
 type RequestOptions = {
@@ -76,7 +76,7 @@ function request(baseResource: string, baseInit: RequestOptions) {
     headers.set('content-type', CONTENT_TYPES.formData)
   }
 
-  const promise: BodyMethodsPromise = new Promise((resolve, reject) => {
+  const promise: RequestPromise = new Promise((resolve, reject) => {
     let timerID: number
 
     if (timeout > 0) {
@@ -140,6 +140,7 @@ function create(baseOptions?: RequestOptions) {
   const methods = {
     create,
     extend,
+    options: baseOptions,
     get: createMethod('GET'),
     post: createMethod('POST'),
     put: createMethod('PUT'),
