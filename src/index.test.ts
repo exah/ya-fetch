@@ -1,44 +1,59 @@
+import nock from 'nock'
 import SimplerFetch from './index'
 
-describe('create', () => {
-  it('should create new instance', () => {
-    const fetch = SimplerFetch.create()
+const server = nock('http://localhost')
 
-    expect(fetch).toBeInstanceOf(Function)
-    expect(fetch.create).toBeInstanceOf(Function)
-    expect(fetch.extend).toBeInstanceOf(Function)
-    expect(fetch.get).toBeInstanceOf(Function)
-    expect(fetch.post).toBeInstanceOf(Function)
-    expect(fetch.put).toBeInstanceOf(Function)
-    expect(fetch.patch).toBeInstanceOf(Function)
-    expect(fetch.delete).toBeInstanceOf(Function)
-    expect(fetch.head).toBeInstanceOf(Function)
+test('should create new instance', () => {
+  const fetch = SimplerFetch.create()
 
-    expect(fetch.options).toBeUndefined()
-  })
+  expect(fetch).toBeInstanceOf(Function)
+  expect(fetch.create).toBeInstanceOf(Function)
+  expect(fetch.extend).toBeInstanceOf(Function)
+  expect(fetch.get).toBeInstanceOf(Function)
+  expect(fetch.post).toBeInstanceOf(Function)
+  expect(fetch.put).toBeInstanceOf(Function)
+  expect(fetch.patch).toBeInstanceOf(Function)
+  expect(fetch.delete).toBeInstanceOf(Function)
+  expect(fetch.head).toBeInstanceOf(Function)
+
+  expect(fetch.options).toBeUndefined()
 })
 
-describe('extend', () => {
-  it.todo('should extend instance')
+test('should prepend prefixUrl with create options', async () => {
+  const api = SimplerFetch.create({ prefixUrl: 'http://localhost' })
+
+  const scope = server.get('/posts').reply(200, [1, 2, 3, 4])
+  const result = await api.get('/posts').json()
+
+  expect(result).toEqual([1, 2, 3, 4])
+  scope.done()
 })
 
-describe('request', () => {
-  it.todo('request query')
-  it.todo('request json')
+test.todo('should extend instance')
 
-  it.todo('response query')
-  it.todo('response json')
-  it.todo('response formData')
-  it.todo('response arrayBuffer')
-  it.todo('response blob')
+test('default request method should be GET', async () => {
+  const scope = server.get('/posts').reply(200, [1, 2, 3, 4])
+  const result = await SimplerFetch('http://localhost/posts').json()
 
-  it.todo('timeout')
-  it.todo('cancel')
-
-  it.todo('get')
-  it.todo('post')
-  it.todo('put')
-  it.todo('patch')
-  it.todo('delete')
-  it.todo('head')
+  expect(result).toEqual([1, 2, 3, 4])
+  scope.done()
 })
+
+test.todo('request query')
+test.todo('request json')
+
+test.todo('response query')
+test.todo('response json')
+test.todo('response formData')
+test.todo('response arrayBuffer')
+test.todo('response blob')
+
+test.todo('timeout')
+test.todo('cancel')
+
+test.todo('get')
+test.todo('post')
+test.todo('put')
+test.todo('patch')
+test.todo('delete')
+test.todo('head')
