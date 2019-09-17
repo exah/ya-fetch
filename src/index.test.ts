@@ -39,10 +39,9 @@ test('default request method should be GET', async () => {
   scope.done()
 })
 
-test.todo('request query')
+test.todo('request params')
 test.todo('request json')
 
-test.todo('response query')
 test.todo('response json')
 test.todo('response formData')
 test.todo('response arrayBuffer')

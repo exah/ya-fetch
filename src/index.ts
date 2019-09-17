@@ -6,7 +6,7 @@ type RequestPromise = Promise<Response> &
 
 type RequestOptions = {
   json?: JSON
-  query?: URLSearchParams
+  params?: URLSearchParams
   timeout?: number
   prefixUrl?: string
 } & RequestInit
@@ -52,9 +52,9 @@ function handleResponse(response: Response) {
 }
 
 function request(baseResource: string, baseInit: RequestOptions) {
-  const { json, query, timeout, prefixUrl = '', ...options } = baseInit
+  const { json, params, timeout, prefixUrl = '', ...options } = baseInit
 
-  const searchParams = query ? '?' + new window.URLSearchParams(query) : ''
+  const searchParams = params ? '?' + new window.URLSearchParams(params) : ''
   const resource = prefixUrl + baseResource + searchParams
 
   const headers = new window.Headers({
