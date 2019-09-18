@@ -1,9 +1,18 @@
-import {
-  ContentTypes,
-  RequestMethods,
-  RequestOptions,
-  RequestPromise,
-} from './types'
+type RequestMethods = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'HEAD' | 'DELETE'
+type ContentTypes = 'json' | 'text' | 'formData' | 'arrayBuffer' | 'blob'
+
+type RequestPromise = Promise<Response> &
+  Partial<Record<ContentTypes, <T>() => Promise<T>>>
+type Params = Record<string, any>
+
+type RequestOptions = {
+  json?: JSON
+  params?: Params
+  timeout?: number
+  prefixUrl?: string
+  onResponse?: (response: Response) => Response
+  serialize?: (params: Params) => string
+} & RequestInit
 
 const CONTENT_TYPES: Record<ContentTypes, string> = {
   json: 'application/json',
@@ -50,7 +59,7 @@ const DEFAULT_OPTIONS: RequestOptions = {
   prefixUrl: '',
   credentials: 'same-origin',
   serialize(params) {
-    return new window.URLSearchParams(params).toString()
+    return new URLSearchParams(params).toString()
   },
   onResponse(response) {
     if (response.ok) {
@@ -75,7 +84,7 @@ function request(baseResource: string, baseInit: RequestOptions) {
   const query = params == null ? '' : '?' + serialize(params)
   const resource = prefixUrl + baseResource + query
 
-  const headers = new window.Headers({
+  const headers = new Headers({
     ...options.headers,
   })
 
@@ -89,15 +98,15 @@ function request(baseResource: string, baseInit: RequestOptions) {
     headers.set('content-type', CONTENT_TYPES.json)
   }
 
-  if (options.body instanceof window.FormData) {
+  if (options.body instanceof FormData) {
     headers.set('content-type', CONTENT_TYPES.formData)
   }
 
   const promise: RequestPromise = new Promise((resolve, reject) => {
-    let timerID: number
+    let timerID: any
 
     if (timeout > 0) {
-      const controller = new window.AbortController()
+      const controller = new AbortController()
 
       timerID = setTimeout(() => {
         reject(new TimeoutError())
@@ -117,8 +126,7 @@ function request(baseResource: string, baseInit: RequestOptions) {
     // running fetch in next tick this allows us
     // to set headers after creating promise
     setTimeout(() =>
-      window
-        .fetch(resource, init)
+      fetch(resource, init)
         .then(onResponse)
         .then(resolve, reject)
         .then(() => clearTimeout(timerID))

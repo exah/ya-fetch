@@ -17,17 +17,21 @@
     "build:esm": "tsc",
     "build:cjs": "tsc -m commonjs --outDir ./cjs",
     "test": "jest",
-    "lint": "eslint --ext ts --ext js ."
+    "lint": "eslint --ext ts --ext js src/"
   },
   "publishConfig": {
     "access": "public"
   },
   "eslintConfig": {
-    "parserOptions": {
-      "project": "./tsconfig.json"
+    "parser": "@typescript-eslint/parser",
+    "globals": {
+      "Headers": true,
+      "FormData": true,
+      "AbortController": true,
+      "fetch": true
     },
     "extends": [
-      "standard-with-typescript",
+      "standard",
       "prettier"
     ],
     "env": {
@@ -38,10 +42,6 @@
       "prettier"
     ],
     "rules": {
-      "@typescript-eslint/explicit-function-return-type": 0,
-      "@typescript-eslint/promise-function-async": 0,
-      "@typescript-eslint/array-type": 0,
-      "@typescript-eslint/indent": 0,
       "prettier/prettier": 2,
       "no-shadow": 2
     }
@@ -61,8 +61,8 @@
     "@types/eslint-plugin-prettier": "^2.2.0",
     "@types/jest": "^24.0.18",
     "@types/nock": "^11.1.0",
+    "@types/node": "^12.7.5",
     "@types/prettier": "^1.18.2",
-    "@typescript-eslint/eslint-plugin": "^2.3.0",
     "@typescript-eslint/parser": "^2.3.0",
     "abort-controller": "^3.0.0",
     "eslint": "^6.4.0",
