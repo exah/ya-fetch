@@ -1,8 +1,6 @@
 import nock from 'nock'
 import SimplerFetch from './index'
 
-const server = nock('http://localhost')
-
 test('should create new instance', () => {
   const fetch = SimplerFetch.create()
 
@@ -20,9 +18,11 @@ test('should create new instance', () => {
 })
 
 test('should prepend prefixUrl with create options', async () => {
-  const api = SimplerFetch.create({ prefixUrl: 'http://localhost' })
+  const scope = nock('http://localhost')
+    .get('/posts')
+    .reply(200, [1, 2, 3, 4])
 
-  const scope = server.get('/posts').reply(200, [1, 2, 3, 4])
+  const api = SimplerFetch.create({ prefixUrl: 'http://localhost' })
   const result = await api.get('/posts').json()
 
   expect(result).toEqual([1, 2, 3, 4])
@@ -32,18 +32,63 @@ test('should prepend prefixUrl with create options', async () => {
 test.todo('should extend instance')
 
 test('default request method should be GET', async () => {
-  const scope = server.get('/posts').reply(200, [1, 2, 3, 4])
+  const scope = nock('http://localhost')
+    .get('/posts')
+    .reply(200, [1, 2, 3, 4])
+
   const result = await SimplerFetch('http://localhost/posts').json()
 
   expect(result).toEqual([1, 2, 3, 4])
   scope.done()
 })
 
-test.todo('request params')
-test.todo('request json')
+test('should transform `params` to query string', async () => {
+  const scope = nock('http://localhost')
+    .get('/posts?userId=1')
+    .reply(200, 'ok')
 
-test.todo('response json')
-test.todo('response formData')
+  const result = await SimplerFetch.get('http://localhost/posts', {
+    params: { userId: 1 },
+  }).text()
+
+  expect(result).toBe('ok')
+  scope.done()
+})
+
+test('request should return `json`', async () => {
+  const data = {
+    firstName: 'Ivan',
+    lastName: 'Grishin',
+    items: [{ id: 1, name: 'Backpack' }, { id: 2, name: 'Laptop' }],
+  }
+
+  const scope = nock('http://localhost')
+    .matchHeader('accept', 'application/json')
+    .get('/posts')
+    .reply(200, data)
+
+  const result = await SimplerFetch.get('http://localhost/posts').json()
+
+  expect(result).toEqual(data)
+  scope.done()
+})
+
+test.todo('request should send `json`')
+
+test.todo('request should return `formData`')
+
+test('request should return `text`', async () => {
+  const scope = nock('http://localhost')
+    .matchHeader('accept', 'text/*')
+    .get('/posts')
+    .reply(200, 'ok')
+
+  const result = await SimplerFetch.get('http://localhost/posts').text()
+
+  expect(result).toBe('ok')
+  scope.done()
+})
+
 test.todo('response arrayBuffer')
 test.todo('response blob')
 

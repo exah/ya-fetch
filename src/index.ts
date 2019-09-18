@@ -29,6 +29,15 @@ class TimeoutError extends Error {
   }
 }
 
+const mergeOptions = (
+  left: RequestOptions = {},
+  right: RequestOptions = {}
+) => ({
+  ...left,
+  ...right,
+  headers: { ...left.headers, ...right.headers },
+})
+
 function isAborted(error: Error) {
   return error.name === 'AbortError'
 }
@@ -37,19 +46,38 @@ function isTimeout(error: Error) {
   return error instanceof TimeoutError
 }
 
-function handleResponse(response: Response) {
-  if (response.ok) {
-    return response
-  }
+const DEFAULT_OPTIONS: RequestOptions = {
+  prefixUrl: '',
+  credentials: 'same-origin',
+  parseParams(params = null) {
+    if (params === null) {
+      return ''
+    }
 
-  throw new ResponseError(response)
+    const result = new window.URLSearchParams(params)
+    return '?' + result.toString()
+  },
+  onResponse(response) {
+    if (response.ok) {
+      return response
+    }
+
+    throw new ResponseError(response)
+  },
 }
 
 function request(baseResource: string, baseInit: RequestOptions) {
-  const { json, params, timeout, prefixUrl = '', ...options } = baseInit
+  const {
+    json,
+    params,
+    timeout,
+    prefixUrl = '',
+    onResponse,
+    parseParams,
+    ...options
+  } = mergeOptions(DEFAULT_OPTIONS, baseInit)
 
-  const searchParams = params ? '?' + new window.URLSearchParams(params) : ''
-  const resource = prefixUrl + baseResource + searchParams
+  const resource = prefixUrl + baseResource + parseParams(params)
 
   const headers = new window.Headers({
     ...options.headers,
@@ -57,7 +85,6 @@ function request(baseResource: string, baseInit: RequestOptions) {
 
   const init: RequestInit = {
     ...options,
-    credentials: 'same-origin',
     headers,
   }
 
@@ -81,7 +108,7 @@ function request(baseResource: string, baseInit: RequestOptions) {
         controller.abort()
       }, timeout)
 
-      if (options.signal) {
+      if (options.signal != null) {
         options.signal.addEventListener('abort', () => {
           clearTimeout(timerID)
           controller.abort()
@@ -91,11 +118,15 @@ function request(baseResource: string, baseInit: RequestOptions) {
       init.signal = controller.signal
     }
 
-    window
-      .fetch(resource, init)
-      .then(handleResponse)
-      .then(resolve, reject)
-      .then(() => clearTimeout(timerID))
+    // running fetch in next tick this allows us
+    // to set headers after creating promise
+    setTimeout(() =>
+      window
+        .fetch(resource, init)
+        .then(onResponse)
+        .then(resolve, reject)
+        .then(() => clearTimeout(timerID))
+    )
   })
 
   for (const [key, type] of Object.entries(CONTENT_TYPES) as [
@@ -112,15 +143,6 @@ function request(baseResource: string, baseInit: RequestOptions) {
 
   return promise
 }
-
-const mergeOptions = (
-  left: RequestOptions = {},
-  right: RequestOptions = {}
-) => ({
-  ...left,
-  ...right,
-  headers: { ...left.headers, ...right.headers },
-})
 
 function create(baseOptions?: RequestOptions) {
   const extend = (options: RequestOptions) =>
