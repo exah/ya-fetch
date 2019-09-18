@@ -1,6 +1,7 @@
 # Builded files
 dist
-.docz
+esm
+cjs
 
 ### Windows ###
 # Windows image file caches
