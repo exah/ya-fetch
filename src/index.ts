@@ -52,7 +52,7 @@ function isAborted(error: Error) {
 }
 
 function isTimeout(error: Error) {
-  return error instanceof TimeoutError
+  return error.name === 'TimeoutError'
 }
 
 const DEFAULT_OPTIONS: RequestOptions = {
@@ -123,8 +123,7 @@ function request(baseResource: string, baseInit: RequestOptions) {
       init.signal = controller.signal
     }
 
-    // running fetch in next tick this allows us
-    // to set headers after creating promise
+    // Running fetch in next tick allow us to set headers after creating promise
     setTimeout(() =>
       fetch(resource, init)
         .then(onResponse)
