@@ -3,15 +3,16 @@ type ContentTypes = 'json' | 'text' | 'formData' | 'arrayBuffer' | 'blob'
 
 type RequestPromise = Promise<Response> &
   Partial<Record<ContentTypes, <T>() => Promise<T>>>
-type Params = Record<string, any>
+
+type AnyData = Record<string, any>
 
 type RequestOptions = {
-  json?: JSON
-  params?: Params
+  json?: AnyData
+  params?: AnyData
   timeout?: number
   prefixUrl?: string
   onResponse?: (response: Response) => Response
-  serialize?: (params: Params) => string
+  serialize?: (params: AnyData) => string
 } & RequestInit
 
 const CONTENT_TYPES: Record<ContentTypes, string> = {
