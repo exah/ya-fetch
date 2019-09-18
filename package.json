@@ -14,8 +14,8 @@
   ],
   "scripts": {
     "build": "run-s build:*",
-    "build:esm": "tsc",
-    "build:cjs": "tsc -m commonjs --outDir ./cjs",
+    "build:esm": "tsc -p tsconfig.esm.json",
+    "build:cjs": "tsc -p tsconfig.cjs.json",
     "test": "jest",
     "lint": "eslint --ext ts --ext js src/"
   },
