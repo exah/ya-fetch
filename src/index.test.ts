@@ -1,5 +1,7 @@
 import nock from 'nock'
-import SimplerFetch, { isTimeout } from './index'
+import SimplerFetch, { isTimeout, isAborted } from './index'
+
+afterEach(() => nock.cleanAll())
 
 test('should create new instance', () => {
   const fetch = SimplerFetch.create()
@@ -93,9 +95,11 @@ test.todo('response arrayBuffer')
 test.todo('response blob')
 
 test('should throw if timeout is passed', async () => {
+  expect.assertions(2)
+
   const scope = nock('http://localhost')
     .get('/posts')
-    .delay(20)
+    .delayConnection(20)
     .reply(200)
 
   try {
@@ -105,20 +109,89 @@ test('should throw if timeout is passed', async () => {
     expect(isTimeout(error)).toBe(true)
   }
 
-  expect(scope.done).toThrow()
+  scope.done()
 })
 
 test('should fullfil if timeout is smaller than delay', async () => {
   const scope = nock('http://localhost')
     .get('/posts')
-    .delay(10)
+    .delayConnection(10)
     .reply(200)
 
   await SimplerFetch.get('http://localhost/posts', { timeout: 20 })
   scope.done()
 })
 
-test.todo('cancel')
+test('AbortController should cancel request', async () => {
+  expect.assertions(2)
+
+  const controller = new AbortController()
+
+  const scope = nock('http://localhost')
+    .get('/posts')
+    .delayConnection(20)
+    .reply(200)
+
+  try {
+    setTimeout(() => controller.abort(), 10)
+    await SimplerFetch.get('http://localhost/posts', {
+      signal: controller.signal,
+    })
+  } catch (error) {
+    expect(error.name).toBe('AbortError')
+    expect(isAborted(error)).toBe(true)
+  }
+
+  scope.done()
+})
+
+test('AbortController should cancel request with timeout', async () => {
+  expect.assertions(2)
+
+  const controller = new AbortController()
+
+  const scope = nock('http://localhost')
+    .get('/posts')
+    .delayConnection(20)
+    .reply(200)
+
+  try {
+    setTimeout(() => controller.abort(), 10)
+    await SimplerFetch.get('http://localhost/posts', {
+      signal: controller.signal,
+      timeout: 15,
+    })
+  } catch (error) {
+    expect(error.name).toBe('AbortError')
+    expect(isAborted(error)).toBe(true)
+  }
+
+  scope.done()
+})
+
+test('AbortController should cancel request before timeout', async () => {
+  expect.assertions(2)
+
+  const controller = new AbortController()
+
+  const scope = nock('http://localhost')
+    .get('/posts')
+    .delayConnection(20)
+    .reply(200)
+
+  try {
+    setTimeout(() => controller.abort(), 10)
+    await SimplerFetch.get('http://localhost/posts', {
+      signal: controller.signal,
+      timeout: 5,
+    })
+  } catch (error) {
+    expect(error.name).toBe('TimeoutError')
+    expect(isTimeout(error)).toBe(true)
+  }
+
+  scope.done()
+})
 
 test.todo('get')
 test.todo('post')
