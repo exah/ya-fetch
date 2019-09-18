@@ -1,5 +1,5 @@
 import nock from 'nock'
-import SimplerFetch from './index'
+import SimplerFetch, { isTimeout } from './index'
 
 test('should create new instance', () => {
   const fetch = SimplerFetch.create()
@@ -92,7 +92,32 @@ test('request should return `text`', async () => {
 test.todo('response arrayBuffer')
 test.todo('response blob')
 
-test.todo('timeout')
+test('should throw if timeout is passed', async () => {
+  const scope = nock('http://localhost')
+    .get('/posts')
+    .delay(20)
+    .reply(200)
+
+  try {
+    await SimplerFetch.get('http://localhost/posts', { timeout: 10 })
+  } catch (error) {
+    expect(error.name).toBe('TimeoutError')
+    expect(isTimeout(error)).toBe(true)
+  }
+
+  expect(scope.done).toThrow()
+})
+
+test('should fullfil if timeout is smaller than delay', async () => {
+  const scope = nock('http://localhost')
+    .get('/posts')
+    .delay(10)
+    .reply(200)
+
+  await SimplerFetch.get('http://localhost/posts', { timeout: 20 })
+  scope.done()
+})
+
 test.todo('cancel')
 
 test.todo('get')
