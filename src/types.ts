@@ -19,5 +19,5 @@ export type RequestOptions = {
   timeout?: number
   prefixUrl?: string
   onResponse?: (response: Response) => Response
-  parseParams?: (params: Params) => string
+  serialize?: (params: Params) => string
 } & RequestInit

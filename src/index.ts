@@ -49,13 +49,8 @@ function isTimeout(error: Error) {
 const DEFAULT_OPTIONS: RequestOptions = {
   prefixUrl: '',
   credentials: 'same-origin',
-  parseParams(params = null) {
-    if (params === null) {
-      return ''
-    }
-
-    const result = new window.URLSearchParams(params)
-    return '?' + result.toString()
+  serialize(params) {
+    return new window.URLSearchParams(params).toString()
   },
   onResponse(response) {
     if (response.ok) {
@@ -73,11 +68,12 @@ function request(baseResource: string, baseInit: RequestOptions) {
     timeout,
     prefixUrl = '',
     onResponse,
-    parseParams,
+    serialize,
     ...options
   } = mergeOptions(DEFAULT_OPTIONS, baseInit)
 
-  const resource = prefixUrl + baseResource + parseParams(params)
+  const query = params == null ? '' : '?' + serialize(params)
+  const resource = prefixUrl + baseResource + query
 
   const headers = new window.Headers({
     ...options.headers,
