@@ -2,30 +2,9 @@ const URL = require('url')
 const fetch = require('node-fetch')
 const AbortController = require('abort-controller')
 
-if (!global.URL) {
-  global.URL = URL
-}
-
-if (!global.URLSearchParams) {
-  global.URLSearchParams = URLSearchParams
-}
-
-if (!global.fetch) {
-  global.fetch = fetch
-}
-
-if (!global.Headers) {
-  global.Headers = fetch.Headers
-}
-
-if (!global.Request) {
-  global.Request = fetch.Request
-}
-
-if (!global.Response) {
-  global.Response = fetch.Response
-}
-
-if (!global.AbortController) {
-  global.AbortController = AbortController
-}
+global.URL = URL
+global.fetch = fetch
+global.Headers = fetch.Headers
+global.Request = fetch.Request
+global.Response = fetch.Response
+global.AbortController = AbortController
