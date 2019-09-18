@@ -23,7 +23,13 @@
     "access": "public"
   },
   "eslintConfig": {
-    "parser": "@typescript-eslint/parser",
+    "parserOptions": {
+      "project": "./tsconfig.json"
+    },
+    "extends": [
+      "standard-with-typescript",
+      "prettier"
+    ],
     "env": {
       "jest/globals": true
     },
@@ -31,11 +37,11 @@
       "jest",
       "prettier"
     ],
-    "extends": [
-      "standard",
-      "prettier"
-    ],
     "rules": {
+      "@typescript-eslint/explicit-function-return-type": 0,
+      "@typescript-eslint/promise-function-async": 0,
+      "@typescript-eslint/array-type": 0,
+      "@typescript-eslint/indent": 0,
       "prettier/prettier": 2,
       "no-shadow": 2
     }
@@ -56,11 +62,13 @@
     "@types/jest": "^24.0.18",
     "@types/nock": "^11.1.0",
     "@types/prettier": "^1.18.2",
-    "@typescript-eslint/parser": "^2.2.0",
+    "@typescript-eslint/eslint-plugin": "^2.3.0",
+    "@typescript-eslint/parser": "^2.3.0",
     "abort-controller": "^3.0.0",
     "eslint": "^6.4.0",
     "eslint-config-prettier": "^6.3.0",
     "eslint-config-standard": "^14.1.0",
+    "eslint-config-standard-with-typescript": "^9.0.0",
     "eslint-plugin-import": "^2.18.2",
     "eslint-plugin-jest": "^22.17.0",
     "eslint-plugin-node": "^10.0.0",

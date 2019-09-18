@@ -1,15 +1,9 @@
-type RequestMethods = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'HEAD' | 'DELETE'
-type ContentTypes = 'json' | 'text' | 'formData' | 'arrayBuffer' | 'blob'
-
-type RequestPromise = Promise<Response> &
-  Partial<Record<ContentTypes, <T>() => Promise<T>>>
-
-type RequestOptions = {
-  json?: JSON
-  params?: URLSearchParams
-  timeout?: number
-  prefixUrl?: string
-} & RequestInit
+import {
+  ContentTypes,
+  RequestMethods,
+  RequestOptions,
+  RequestPromise,
+} from './types'
 
 const CONTENT_TYPES: Record<ContentTypes, string> = {
   json: 'application/json',
