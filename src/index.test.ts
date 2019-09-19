@@ -33,7 +33,27 @@ describe('Instance', () => {
     scope.done()
   })
 
-  test.todo('should extend instance')
+  test('should extend instance with new options', async () => {
+    const base = SimplerFetch.create({ prefixUrl: 'http://localhost' })
+    expect(base.options.prefixUrl).toBe('http://localhost')
+
+    const extended = base.extend({
+      headers: {
+        Authorization: 'Bearer ::Token::',
+      },
+    })
+
+    expect(extended.options.prefixUrl).toBe('http://localhost')
+    expect(extended.options.headers.Authorization).toBe('Bearer ::Token::')
+
+    const scope = nock('http://localhost')
+      .matchHeader('Authorization', 'Bearer ::Token::')
+      .get('/comments')
+      .reply(200)
+
+    await extended.get('/comments')
+    scope.done()
+  })
 
   test('default request method should be GET', async () => {
     const scope = nock('http://localhost')
