@@ -14,6 +14,7 @@ type RequestOptions = {
   params?: unknown
   timeout?: number
   prefixUrl?: string
+  headers?: Record<string, string>
   onResponse?(response: Response): Response
   serialize?(params: unknown): string
 } & RequestInit
@@ -88,14 +89,8 @@ function request(baseResource: string, baseInit: RequestOptions) {
   const query = params == null ? '' : '?' + serialize(params)
   const resource = prefixUrl + baseResource + query
 
-  const headers = new Headers({
-    ...options.headers,
-  })
-
-  const init: RequestInit = {
-    ...options,
-    headers,
-  }
+  const headers = new Headers(options.headers)
+  const init: RequestInit = { ...options, headers }
 
   if (json != null) {
     init.body = JSON.stringify(json)
