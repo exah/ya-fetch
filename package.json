@@ -17,8 +17,19 @@
     "build:esm": "tsc -p tsconfig.esm.json",
     "build:cjs": "tsc -p tsconfig.cjs.json",
     "test": "jest",
-    "lint": "eslint --ext ts --ext js src/"
+    "lint": "eslint --ext ts --ext js src/",
+    "size": "size-limit"
   },
+  "size-limit": [
+    {
+      "path": "./esm/index.js",
+      "limit": "1.5Kb"
+    },
+    {
+      "path": "./cjs/index.js",
+      "limit": "1.5Kb"
+    }
+  ],
   "publishConfig": {
     "access": "public"
   },
@@ -58,6 +69,7 @@
     ]
   },
   "devDependencies": {
+    "@size-limit/preset-small-lib": "^2.1.5",
     "@types/eslint": "^6.1.1",
     "@types/eslint-plugin-prettier": "^2.2.0",
     "@types/jest": "^24.0.18",
