@@ -6,7 +6,6 @@
     "sourceMap": true,
     "moduleResolution": "node",
     "strict": true,
-    "importHelpers": true,
     "strictNullChecks": false,
     "esModuleInterop": true
   },
