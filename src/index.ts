@@ -9,15 +9,13 @@ interface RequestPromise extends Promise<Response> {
   formData?(): Promise<FormData>
 }
 
-type Params = Record<string, any>
-
 type RequestOptions = {
   json?: unknown
-  params?: Params
+  params?: unknown
   timeout?: number
   prefixUrl?: string
-  onResponse?: (response: Response) => Response
-  serialize?: (params: Params) => string
+  onResponse?(response: Response): Response
+  serialize?(params: unknown): string
 } & RequestInit
 
 const CONTENT_TYPES: Record<ContentTypes, string> = {
@@ -64,7 +62,7 @@ function isTimeout(error: Error) {
 const DEFAULT_OPTIONS: RequestOptions = {
   prefixUrl: '',
   credentials: 'same-origin',
-  serialize(params) {
+  serialize(params: URLSearchParams) {
     return new URLSearchParams(params).toString()
   },
   onResponse(response) {

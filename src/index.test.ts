@@ -17,6 +17,7 @@ describe('Instance', () => {
     expect(fetch.delete).toBeInstanceOf(Function)
     expect(fetch.head).toBeInstanceOf(Function)
 
+    expect(fetch).toEqual(fetch.get)
     expect(fetch.options).toBeUndefined()
   })
 
