@@ -60,6 +60,17 @@ describe('Instance', () => {
 })
 
 describe('Response', () => {
+  test('request should return `Response` object by default', async () => {
+    const scope = nock('http://localhost')
+      .get('/comments')
+      .reply(200)
+
+    const result = await SimplerFetch.get('http://localhost/comments')
+
+    expect(result).toBeInstanceOf(Response)
+    scope.done()
+  })
+
   test('request should return `json`', async () => {
     const data = {
       firstName: 'Ivan',
@@ -90,9 +101,35 @@ describe('Response', () => {
     scope.done()
   })
 
-  test.todo('response formData')
-  test.todo('response arrayBuffer')
-  test.todo('response blob')
+  test('request should return `arrayBuffer`', async () => {
+    const scope = nock('http://localhost')
+      .matchHeader('accept', '*/*')
+      .get('/blob')
+      .reply(200, 'test')
+
+    const result = await SimplerFetch.get('http://localhost/blob').arrayBuffer()
+
+    // @ts-ignore
+    expect(String.fromCharCode(...new Uint8Array(result))).toBe('test')
+    expect(result.byteLength).toBe(4)
+    expect(result).toBeInstanceOf(ArrayBuffer)
+    scope.done()
+  })
+
+  test('request should return `blob`', async () => {
+    const scope = nock('http://localhost')
+      .matchHeader('accept', '*/*')
+      .get('/blob')
+      .reply(200, 'test')
+
+    const result = await SimplerFetch.get('http://localhost/blob').blob()
+
+    // @ts-ignore
+    expect(await result.text()).toBe('test')
+    expect(result.size).toBe(4)
+    expect(result.type).toBeDefined()
+    scope.done()
+  })
 })
 
 describe('Timeout', () => {

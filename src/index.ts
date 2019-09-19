@@ -1,18 +1,23 @@
 type RequestMethods = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'HEAD' | 'DELETE'
 type ContentTypes = 'json' | 'text' | 'formData' | 'arrayBuffer' | 'blob'
 
-type RequestPromise = Promise<Response> &
-  Partial<Record<ContentTypes, <T>() => Promise<T>>>
+interface RequestPromise extends Promise<Response> {
+  json?<T>(): Promise<T>
+  text?(): Promise<string>
+  blob?(): Promise<Blob>
+  arrayBuffer?(): Promise<ArrayBuffer>
+  formData?(): Promise<FormData>
+}
 
-type AnyData = Record<string, any>
+type Params = Record<string, any>
 
 type RequestOptions = {
-  json?: AnyData
-  params?: AnyData
+  json?: unknown
+  params?: Params
   timeout?: number
   prefixUrl?: string
   onResponse?: (response: Response) => Response
-  serialize?: (params: AnyData) => string
+  serialize?: (params: Params) => string
 } & RequestInit
 
 const CONTENT_TYPES: Record<ContentTypes, string> = {
