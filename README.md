@@ -6,6 +6,7 @@
 
 - [x] Only 1.18 KB minified & gziped
 - [x] Only native API (polyfills required)
+- [x] TypeScript support
 - [x] Instance with custom defaults
 - [x] Methods shortcuts
 - [x] Response type shortcuts
@@ -77,7 +78,7 @@ const api = F.create({
 const result = await api.get('/posts', { params: { userId: 1 } }).json()
 ```
 
-### Send & Recieve JSON
+### Send & Receive JSON
 
 ```js
 const result = await api.post('/posts', { json: { title: 'New Post' } }).json()
