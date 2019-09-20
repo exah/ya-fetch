@@ -1,4 +1,6 @@
-# s-fetch
+<h1>
+  <center>f-e-t-c-h</center>
+</h1>
 
 > Super light-weight wrapper around `fetch`
 
@@ -12,7 +14,7 @@
 ## 📦 Install
 
 ```sh
-$ yarn add s-fetch
+$ yarn add f-e-t-c-h
 ```
 
 ## 🔗 Alternatives

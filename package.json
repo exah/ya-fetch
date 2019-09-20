@@ -1,10 +1,10 @@
 {
-  "name": "s-fetch",
+  "name": "f-e-t-c-h",
   "version": "0.0.0",
   "description": "",
   "author": "John Grishin <hi@johngrish.in>",
   "license": "MIT",
-  "repository": "exah/s-fetch",
+  "repository": "exah/f-e-t-c-h",
   "sideEffects": false,
   "main": "cjs/index.js",
   "module": "esm/index.js",
