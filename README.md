@@ -101,49 +101,49 @@ fetch('http://example.com/posts', {
 
 ### Methods
 
-<details><summary>`F(resource: string, options?: Options): Result` (alias to `.get`)</summary>
+<details><summary><code>F(resource: string, options?: Options): Result</code> (alias to <code>.get</code>)</summary>
 
 ```js
 fetch(resource, { method: 'GET', ...options })
 ```
 
 </details>
-<details><summary>`F.get(resource: string, options?: Options): Result`</summary>
+<details><summary><code>F.get(resource: string, options?: Options): Result</code></summary>
 
 ```js
 fetch(resource, { method: 'GET', ...options })
 ```
 
 </details>
-<details><summary>`F.post(resource: string, options?: Options): Result`</summary>
+<details><summary><code>F.post(resource: string, options?: Options): Result</code></summary>
 
 ```js
 fetch(resource, { method: 'POST', ...options })
 ```
 
 </details>
-<details><summary>`F.put(resource: string, options?: Options): Result`</summary>
+<details><summary><code>F.put(resource: string, options?: Options): Result</code></summary>
 
 ```js
 fetch(resource, { method: 'PUT', ...options })
 ```
 
 </details>
-<details><summary>`F.patch(resource: string, options?: Options): Result`</summary>
+<details><summary><code>F.patch(resource: string, options?: Options): Result</code></summary>
 
 ```js
 fetch(resource, { method: 'PATCH', ...options })
 ```
 
 </details>
-<details><summary>`F.delete(resource: string, options?: Options): Result`</summary>
+<details><summary><code>F.delete(resource: string, options?: Options): Result</code></summary>
 
 ```js
 fetch(resource, { method: 'DELETE', ...options })
 ```
 
 </details>
-<details> <summary>`F.head(resource: string, options?: Options): Result`</summary>
+<details><summary><code>F.head(resource: string, options?: Options): Result</code></summary>
 
 ```js
 fetch(resource, { method: 'HEAD' })
