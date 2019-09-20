@@ -1,7 +1,7 @@
 type RequestMethods = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'HEAD' | 'DELETE'
 type ContentTypes = 'json' | 'text' | 'formData' | 'arrayBuffer' | 'blob'
 
-interface RequestPromise extends Promise<Response> {
+interface Request extends Promise<Response> {
   json?<T>(): Promise<T>
   text?(): Promise<string>
   blob?(): Promise<Blob>
@@ -9,7 +9,7 @@ interface RequestPromise extends Promise<Response> {
   formData?(): Promise<FormData>
 }
 
-type RequestOptions = {
+type Options = {
   json?: unknown
   params?: unknown
   timeout?: number
@@ -43,10 +43,7 @@ class TimeoutError extends Error {
   }
 }
 
-const mergeOptions = (
-  left: RequestOptions = {},
-  right: RequestOptions = {}
-) => ({
+const mergeOptions = (left: Options = {}, right: Options = {}) => ({
   ...left,
   ...right,
   headers: { ...left.headers, ...right.headers },
@@ -60,7 +57,7 @@ function isTimeout(error: Error) {
   return error.name === 'TimeoutError'
 }
 
-const DEFAULT_OPTIONS: RequestOptions = {
+const DEFAULT_OPTIONS: Options = {
   prefixUrl: '',
   credentials: 'same-origin',
   serialize(params: URLSearchParams) {
@@ -75,7 +72,7 @@ const DEFAULT_OPTIONS: RequestOptions = {
   },
 }
 
-function request(baseResource: string, baseInit: RequestOptions) {
+function request(baseResource: string, baseInit: Options) {
   const {
     json,
     params,
@@ -101,7 +98,7 @@ function request(baseResource: string, baseInit: RequestOptions) {
     headers.set('content-type', CONTENT_TYPES.formData)
   }
 
-  const promise: RequestPromise = new Promise((resolve, reject) => {
+  const promise: Request = new Promise((resolve, reject) => {
     let timerID: any
 
     if (timeout > 0) {
@@ -146,16 +143,16 @@ function request(baseResource: string, baseInit: RequestOptions) {
   return promise
 }
 
-function create(baseOptions?: RequestOptions) {
-  const extend = (options: RequestOptions) =>
+function create(baseOptions?: Options) {
+  const extend = (options: Options) =>
     create(mergeOptions(baseOptions, options))
 
   const createMethod = (method: RequestMethods) => (
     resource: string,
-    options?: RequestOptions
+    options?: Options
   ) => request(resource, mergeOptions(baseOptions, { method, ...options }))
 
-  const methods = {
+  const intance = {
     create,
     extend,
     options: baseOptions,
@@ -167,7 +164,7 @@ function create(baseOptions?: RequestOptions) {
     delete: createMethod('DELETE'),
   }
 
-  return Object.assign(methods.get, methods)
+  return Object.assign(intance.get, intance)
 }
 
 export { create, isAborted, isTimeout, ResponseError, TimeoutError }
