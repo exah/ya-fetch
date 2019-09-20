@@ -9,7 +9,7 @@ interface Request extends Promise<Response> {
   formData?(): Promise<FormData>
 }
 
-type Options = {
+interface Options extends RequestInit {
   json?: unknown
   params?: unknown
   timeout?: number
@@ -17,7 +17,7 @@ type Options = {
   headers?: Record<string, string>
   onResponse?(response: Response): Response
   serialize?(params: unknown): string
-} & RequestInit
+}
 
 const CONTENT_TYPES: Record<ContentTypes, string> = {
   json: 'application/json',
@@ -72,7 +72,7 @@ const DEFAULT_OPTIONS: Options = {
   },
 }
 
-function request(baseResource: string, baseInit: Options) {
+function request(baseResource: string, baseInit: Options): Request {
   const {
     json,
     params,
