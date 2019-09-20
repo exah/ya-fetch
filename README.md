@@ -235,7 +235,7 @@ fetch(resource, { method: 'HEAD', ...options })
 
 ### Options
 
-```js
+```ts
 interface Options extends RequestInit {
   json?: unknown
   params?: unknown
@@ -249,7 +249,7 @@ interface Options extends RequestInit {
 
 ### Request
 
-```
+```ts
 interface Request extends Promise<Response> {
   json?<T>(): Promise<T>
   text?(): Promise<string>
