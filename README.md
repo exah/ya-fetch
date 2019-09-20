@@ -1,6 +1,4 @@
-<h1>
-  <center>f-e-t-c-h</center>
-</h1>
+<h1 align="center">f-e-t-c-h</h1>
 
 > Super light-weight wrapper around `fetch`
 
@@ -20,7 +18,7 @@
 $ yarn add f-e-t-c-h
 ```
 
-## 📝 Usage
+## 📖 Usage
 
 ```js
 import 'isomorphic-fetch'
