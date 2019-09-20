@@ -31,7 +31,7 @@ console.log(result)
 // → { userId: 1, id: 1, title: 'New Post', body: 'Some text', }
 ```
 
-## 📖 Usage
+## 💻 Usage
 
 ### Create instance
 
@@ -64,7 +64,7 @@ fetch('http://example.com/posts?id=1').then((res) => {
 
 </details>
 
-### Send & Receive JSON
+### Send & receive JSON
 
 ```js
 api.post('/posts', { json: { title: 'New Post' } }).json()
@@ -90,6 +90,92 @@ fetch('http://example.com/posts', {
 ```
 
 </details>
+
+## 📖 API
+
+### Instance
+
+`F.create(options?: Options): Instance` <br>
+`F.extend(options?: Options): Instance` <br>
+`F.options: Options`
+
+### Methods
+
+<details><summary>`F(resource: string, options?: Options): Result` (alias to `.get`)</summary>
+
+```js
+fetch(resource, { method: 'GET', ...options })
+```
+
+</details>
+<details><summary>`F.get(resource: string, options?: Options): Result`</summary>
+
+```js
+fetch(resource, { method: 'GET', ...options })
+```
+
+</details>
+<details><summary>`F.post(resource: string, options?: Options): Result`</summary>
+
+```js
+fetch(resource, { method: 'POST', ...options })
+```
+
+</details>
+<details><summary>`F.put(resource: string, options?: Options): Result`</summary>
+
+```js
+fetch(resource, { method: 'PUT', ...options })
+```
+
+</details>
+<details><summary>`F.patch(resource: string, options?: Options): Result`</summary>
+
+```js
+fetch(resource, { method: 'PATCH', ...options })
+```
+
+</details>
+<details><summary>`F.delete(resource: string, options?: Options): Result`</summary>
+
+```js
+fetch(resource, { method: 'DELETE', ...options })
+```
+
+</details>
+<details> <summary>`F.head(resource: string, options?: Options): Result`</summary>
+
+```js
+fetch(resource, { method: 'HEAD' })
+```
+
+</details>
+
+### Options
+
+```js
+type Options = {
+  json?: unknown
+  params?: unknown
+  timeout?: number
+  prefixUrl?: string
+  headers?: Record<string, string>
+  onResponse?(response: Response): Response
+  serialize?(params: unknown): string
+} & RequestInit
+```
+
+### Request
+
+```
+interface Request extends Promise<Response> {
+  json?<T>(): Promise<T>
+  text?(): Promise<string>
+  blob?(): Promise<Blob>
+  arrayBuffer?(): Promise<ArrayBuffer>
+  formData?(): Promise<FormData>
+}
+```
 
 ## 🔗 Alternatives
 
