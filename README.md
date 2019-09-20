@@ -91,6 +91,88 @@ fetch('http://example.com/posts', {
 
 </details>
 
+### Timeout
+
+> This feature may require polyfill for [`AbortController`](https://developer.mozilla.org/en-US/docs/Web/API/AbortController.html) and `fetch`.
+
+Cancel request if it is not fulfilled in period of time.
+
+```js
+import { isTimeout } from 'f-e-t-c-h'
+
+api
+  .get('/posts', { timeout: 300 })
+  .json()
+  .then((posts) => console.log(posts))
+  .catch((error) => {
+    if (isTimeout(error)) {
+      // do something
+    }
+  })
+```
+
+<details><summary>Same code without wrapper</summary>
+
+```js
+const controller = new AbortController()
+
+setTimeout(() => {
+  controller.abort()
+}, 300)
+
+fetch('http://example.com/posts', {
+  signal: controller.signal,
+  headers: {
+    accept: 'application/json',
+  },
+})
+  .then((res) => {
+    if (res.ok) {
+      return res.json()
+    }
+
+    throw new Error('Oops')
+  })
+  .catch((error) => {
+    if (error.name === 'AbortError') {
+      // do something
+    }
+  })
+```
+
+</details>
+
+### Cancel request
+
+> This feature may require polyfill for [`AbortController`](https://developer.mozilla.org/en-US/docs/Web/API/AbortController.html) and `fetch`.
+
+```js
+import { isAborted } from 'f-e-t-c-h'
+import { useEffect, useState } from 'react'
+
+export function usePosts() {
+  const [posts, setPosts] = useState([])
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    api
+      .get('/posts', { signal: controller.signal })
+      .json()
+      .then((data) => setPosts(data))
+      .catch((error) => {
+        if (isAborted(error)) {
+          // do something
+        }
+      })
+
+    return () => controller.abort()
+  }, [setPosts])
+
+  return posts
+}
+```
+
 ## 📖 API
 
 ### Instance
@@ -101,52 +183,52 @@ fetch('http://example.com/posts', {
 
 ### Methods
 
-<details><summary><code>F(resource: string, options?: Options): Result</code> (alias to <code>.get</code>)</summary>
+<details><summary><code>F(resource: string, options?: Options): Request</code> (alias to <code>.get</code>)</summary>
 
 ```js
 fetch(resource, { method: 'GET', ...options })
 ```
 
 </details>
-<details><summary><code>F.get(resource: string, options?: Options): Result</code></summary>
+<details><summary><code>F.get(resource: string, options?: Options): Request</code></summary>
 
 ```js
 fetch(resource, { method: 'GET', ...options })
 ```
 
 </details>
-<details><summary><code>F.post(resource: string, options?: Options): Result</code></summary>
+<details><summary><code>F.post(resource: string, options?: Options): Request</code></summary>
 
 ```js
 fetch(resource, { method: 'POST', ...options })
 ```
 
 </details>
-<details><summary><code>F.put(resource: string, options?: Options): Result</code></summary>
+<details><summary><code>F.put(resource: string, options?: Options): Request</code></summary>
 
 ```js
 fetch(resource, { method: 'PUT', ...options })
 ```
 
 </details>
-<details><summary><code>F.patch(resource: string, options?: Options): Result</code></summary>
+<details><summary><code>F.patch(resource: string, options?: Options): Request</code></summary>
 
 ```js
 fetch(resource, { method: 'PATCH', ...options })
 ```
 
 </details>
-<details><summary><code>F.delete(resource: string, options?: Options): Result</code></summary>
+<details><summary><code>F.delete(resource: string, options?: Options): Request</code></summary>
 
 ```js
 fetch(resource, { method: 'DELETE', ...options })
 ```
 
 </details>
-<details><summary><code>F.head(resource: string, options?: Options): Result</code></summary>
+<details><summary><code>F.head(resource: string, options?: Options): Request</code></summary>
 
 ```js
-fetch(resource, { method: 'HEAD' })
+fetch(resource, { method: 'HEAD', ...options })
 ```
 
 </details>
@@ -154,7 +236,7 @@ fetch(resource, { method: 'HEAD' })
 ### Options
 
 ```js
-type Options = {
+interface Options extends RequestInit {
   json?: unknown
   params?: unknown
   timeout?: number
@@ -162,7 +244,7 @@ type Options = {
   headers?: Record<string, string>
   onResponse?(response: Response): Response
   serialize?(params: unknown): string
-} & RequestInit
+}
 ```
 
 ### Request
