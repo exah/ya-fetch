@@ -1,7 +1,7 @@
 {
   "name": "f-e-t-c-h",
   "version": "0.0.0",
-  "description": "",
+  "description": "Super light-weight wrapper around fetch",
   "author": "John Grishin <hi@johngrish.in>",
   "license": "MIT",
   "repository": "exah/f-e-t-c-h",
@@ -13,6 +13,22 @@
     "./esm",
     "./cjs",
     "./types"
+  ],
+  "tags": [
+    "fetch",
+    "api",
+    "rest",
+    "ajax",
+    "request",
+    "get",
+    "post",
+    "patch",
+    "put",
+    "delete",
+    "head",
+    "tiny",
+    "json",
+    "typescript"
   ],
   "scripts": {
     "build": "run-s build:*",

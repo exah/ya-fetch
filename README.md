@@ -11,6 +11,8 @@
 - [x] First class JSON support
 - [x] Search params
 - [x] Timeouts
+- [ ] ~~Progress tracking~~
+- [ ] ~~Retry~~
 - [x] Zero deps
 
 ## 📦 Install
@@ -262,8 +264,8 @@ interface RequestBody extends Promise<Response> {
 
 ## 🔗 Alternatives
 
-- [`ky`](https://github.com/sindresorhus/ky) - Library that inspired this one, but twice the size and not transpiled for old browsers
-- [`axios`](https://github.com/axios/axios) - Based on old `XMLHttpRequests` API, 4x times bigger, but feature packed
+- [`ky`](https://github.com/sindresorhus/ky) - Library that inspired this one, but 3x times bigger and not transpiled for es5 browsers
+- [`axios`](https://github.com/axios/axios) - Based on old `XMLHttpRequests` API, almost 5x times bigger, but super popular and feature packed
 
 ---
 
