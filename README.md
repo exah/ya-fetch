@@ -1,5 +1,7 @@
 <h1 align="center">ya-fetch</h1>
 
+[![](https://flat.badgen.net/bundlephobia/minzip/ya-fetch)](https://bundlephobia.com/result?p=ya-fetch)
+
 > Super light-weight wrapper around `fetch`
 
 - [x] Only 840 B when minified & gziped
