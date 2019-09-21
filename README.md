@@ -239,7 +239,7 @@ interface Options extends RequestInit {
   serialize?(params: unknown): string
   /** Custom fetch instance */
   fetch?(resource: string, init: RequestInit): Promise<Response>
-  /** Response handler, must throw `ResponseError` */
+  /** Response handler, must handle status codes or throw `ResponseError` */
   onResponse?(response: Response): Response
   /** Response handler with sucess status codes 200-299 */
   onSuccess?(value: Response): Response
