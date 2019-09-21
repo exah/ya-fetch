@@ -167,19 +167,18 @@ function request(baseResource: string, baseInit: Options): RequestBody {
     )
   }).then(onSuccess, onFailure)
 
-  for (const [key, type] of Object.entries(CONTENT_TYPES) as [
-    ContentTypes,
-    string
-  ][]) {
-    promise[key] = () => {
-      headers.set('accept', type)
-      return promise
-        .then((response) => response.clone())
-        .then((response) => response[key]())
-    }
-  }
-
-  return promise
+  return (Object.keys(CONTENT_TYPES) as ContentTypes[]).reduce<RequestBody>(
+    (acc, key) => {
+      acc[key] = () => {
+        headers.set('accept', CONTENT_TYPES[key])
+        return promise
+          .then((response) => response.clone())
+          .then((response) => response[key]())
+      }
+      return acc
+    },
+    promise
+  )
 }
 
 function create(baseOptions?: Options): Instance {
