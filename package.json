@@ -60,6 +60,7 @@
     "globals": {
       "fetch": true,
       "FormData": true,
+      "Response": true,
       "AbortController": true
     },
     "extends": [
