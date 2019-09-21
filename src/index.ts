@@ -10,15 +10,25 @@ interface Request extends Promise<Response> {
 }
 
 interface Options extends RequestInit {
+  /** Object that will be stringified with `JSON.stringify` */
   json?: unknown
+  /** Object that can be passed to `serialize` */
   params?: unknown
+  /** Throw `TimeoutError`if timeout is passed */
   timeout?: number
+  /** String that will prepended to `resource` in `fetch` instance */
   prefixUrl?: string
+  /** Request headers */
   headers?: Record<string, string>
+  /** Custom params serializer, default to `URLSearchParams` */
   serialize?(params: unknown): string
+  /** Custom fetch instance */
   fetch?(resource: string, init: RequestInit): Promise<Response>
+  /** Response handler, must throw `ResponseError` */
   onResponse?(response: Response): Response
+  /** Response handler with sucess status codes 200-299 */
   onSuccess?(value: Response): Response
+  /** Error handler, must throw an `Error` */
   onFailure?(error: Error): never
 }
 
