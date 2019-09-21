@@ -36,17 +36,24 @@ console.log(result)
 ### Create instance
 
 ```js
+// api.js
+import F from 'f-e-t-c-h'
+
 const api = F.create({
-  prefixUrl: 'https://jsonplaceholder.typicode.com/',
+  prefixUrl: 'https://jsonplaceholder.typicode.com',
   headers: {
     Authorization: 'Bearer 943b1a29b46248b29336164d9ec5f217',
   },
 })
+
+export default api
 ```
 
 ### Search params
 
 ```js
+import api from './api'
+
 api.get('/posts', { params: { userId: 1 } }).json()
 ```
 
@@ -67,6 +74,8 @@ fetch('http://example.com/posts?id=1').then((res) => {
 ### Send & receive JSON
 
 ```js
+import api from './api'
+
 api.post('/posts', { json: { title: 'New Post' } }).json()
 ```
 
@@ -97,6 +106,7 @@ Cancel request if it is not fulfilled in period of time.
 
 ```js
 import { isTimeout } from 'f-e-t-c-h'
+import api from './api'
 
 api
   .get('/posts', { timeout: 300 })
@@ -147,6 +157,7 @@ fetch('http://example.com/posts', {
 ```js
 import { isAborted } from 'f-e-t-c-h'
 import { useEffect, useState } from 'react'
+import api from './api'
 
 export function usePosts() {
   const [posts, setPosts] = useState([])
@@ -169,6 +180,24 @@ export function usePosts() {
 
   return posts
 }
+```
+
+### Provide custom search params serializer
+
+By default parsed & stringified with [URLSearchParams](https://developer.mozilla.org/en-US/docs/Web/API/URLsearchParams).
+
+```js
+import queryString from 'query-string'
+
+const api = F.create({
+  prefixUrl: 'https://jsonplaceholder.typicode.com',
+  serializer(params) {
+    return queryString.stringify(params, { arrayFormat: 'bracket' })
+  },
+})
+
+api.get('/posts', { params: { userId: 1, tags: [1, 2] } })
+// https://jsonplaceholder.typicode.com/posts?userId=1&tags[]=1&tags[]=2
 ```
 
 ## 📖 API
