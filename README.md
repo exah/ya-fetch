@@ -1,4 +1,4 @@
-<h1 align="center">f-e-t-c-h</h1>
+<h1 align="center">ya-fetch</h1>
 
 > Super light-weight wrapper around `fetch`
 
@@ -18,14 +18,14 @@
 ## 📦 Install
 
 ```sh
-$ yarn add @exah/f-e-t-c-h
+$ yarn add ya-fetch
 ```
 
 ```js
-import F from '@exah/f-e-t-c-h'
+import YF from 'ya-fetch'
 
 // inside an aync function
-const result = await F.patch('http://example.com/posts', {
+const result = await YF.patch('http://example.com/posts', {
   params: { id: 1 },
   json: { title: 'New Post' },
 }).json()
@@ -40,9 +40,9 @@ console.log(result)
 
 ```js
 // api.js
-import F from '@exah/f-e-t-c-h'
+import YF from 'ya-fetch'
 
-const api = F.create({
+const api = YF.create({
   prefixUrl: 'https://jsonplaceholder.typicode.com',
   headers: {
     Authorization: 'Bearer 943b1a29b46248b29336164d9ec5f217',
@@ -108,7 +108,7 @@ fetch('http://example.com/posts', {
 Cancel request if it is not fulfilled in period of time.
 
 ```js
-import { isTimeout } from '@exah/f-e-t-c-h'
+import { isTimeout } from 'ya-fetch'
 import api from './api'
 
 api
@@ -158,7 +158,7 @@ fetch('http://example.com/posts', {
 > This feature may require polyfill for [`AbortController`](https://developer.mozilla.org/en-US/docs/Web/API/AbortController.html) and `fetch`.
 
 ```js
-import { isAborted } from '@exah/f-e-t-c-h'
+import { isAborted } from 'ya-fetch'
 import { useEffect, useState } from 'react'
 import api from './api'
 
@@ -190,9 +190,10 @@ export function usePosts() {
 By default parsed & stringified with [URLSearchParams](https://developer.mozilla.org/en-US/docs/Web/API/URLsearchParams).
 
 ```js
+import YF from 'ya-fetch'
 import queryString from 'query-string'
 
-const api = F.create({
+const api = YF.create({
   prefixUrl: 'https://jsonplaceholder.typicode.com',
   serializer(params) {
     return queryString.stringify(params, { arrayFormat: 'bracket' })

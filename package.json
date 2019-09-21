@@ -1,10 +1,10 @@
 {
-  "name": "@exah/f-e-t-c-h",
+  "name": "ya-fetch",
   "version": "1.0.0",
   "description": "Super light-weight wrapper around fetch",
   "author": "John Grishin <hi@johngrish.in>",
   "license": "MIT",
-  "repository": "exah/f-e-t-c-h",
+  "repository": "exah/ya-fetch",
   "sideEffects": false,
   "main": "cjs/index.js",
   "module": "esm/index.js",
