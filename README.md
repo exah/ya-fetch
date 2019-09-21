@@ -2,7 +2,7 @@
 
 > Super light-weight wrapper around `fetch`
 
-- [x] Only 888 B when minified & gziped
+- [x] Only 829 B when minified & gziped
 - [x] Only native API (polyfills for `fetch`, `AbortController` required)
 - [x] TypeScript support
 - [x] Instance with custom defaults
@@ -239,8 +239,6 @@ interface Options extends RequestInit {
   headers?: Record<string, string>
   /** Custom params serializer, default to `URLSearchParams` */
   serialize?(params: unknown): string
-  /** Custom fetch instance */
-  fetch?(resource: string, init: RequestInit): Promise<Response>
   /** Response handler, must handle status codes or throw `ResponseError` */
   onResponse?(response: Response): Response
   /** Response handler with sucess status codes 200-299 */

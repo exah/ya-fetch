@@ -58,11 +58,9 @@
   "eslintConfig": {
     "parser": "@typescript-eslint/parser",
     "globals": {
-      "Headers": true,
+      "fetch": true,
       "FormData": true,
-      "Response": true,
-      "AbortController": true,
-      "fetch": true
+      "AbortController": true
     },
     "extends": [
       "standard",

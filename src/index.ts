@@ -11,11 +11,11 @@ interface RequestBody extends Promise<Response> {
   formData?(): Promise<FormData>
 }
 
-interface Options extends RequestInit {
+interface Options<J = unknown, P = unknown> extends RequestInit {
   /** Object that will be stringified with `JSON.stringify` */
-  json?: unknown
+  json?: J
   /** Object that can be passed to `serialize` */
-  params?: unknown
+  params?: P
   /** Throw `TimeoutError`if timeout is passed */
   timeout?: number
   /** String that will prepended to `resource` in `fetch` instance */
@@ -23,9 +23,7 @@ interface Options extends RequestInit {
   /** Request headers */
   headers?: Record<string, string>
   /** Custom params serializer, default to `URLSearchParams` */
-  serialize?(params: unknown): string
-  /** Custom fetch instance */
-  fetch?(resource: string, init: RequestInit): Promise<Response>
+  serialize?(params: P): string
   /** Response handler, must handle status codes or throw `ResponseError` */
   onResponse?(response: Response): Response
   /** Response handler with sucess status codes 200-299 */
@@ -84,7 +82,6 @@ function isTimeout(error: Error) {
 const DEFAULT_OPTIONS: Options = {
   prefixUrl: '',
   credentials: 'same-origin',
-  fetch,
   serialize(params: URLSearchParams) {
     return new URLSearchParams(params).toString()
   },
@@ -104,73 +101,57 @@ const DEFAULT_OPTIONS: Options = {
 }
 
 function request(baseResource: string, baseInit: Options): RequestBody {
-  const options = mergeOptions(DEFAULT_OPTIONS, baseInit)
+  const opts = mergeOptions(DEFAULT_OPTIONS, baseInit)
+  const query = opts.params == null ? '' : '?' + opts.serialize(opts.params)
+  const resource = opts.prefixUrl + baseResource + query
 
-  const {
-    json,
-    params,
-    timeout,
-    prefixUrl = '',
-    serialize,
-    fetch: fetchInstance,
-    onResponse,
-    onSuccess,
-    onFailure,
-  } = options
-
-  const query = params == null ? '' : '?' + serialize(params)
-  const resource = prefixUrl + baseResource + query
-
-  const headers = new Headers(options.headers)
-  const init: RequestInit = merge(options, { headers })
-
-  if (json != null) {
-    init.body = JSON.stringify(json)
-    headers.set('content-type', CONTENT_TYPES.json)
+  if (opts.json != null) {
+    opts.body = JSON.stringify(opts.json)
+    opts.headers['content-type'] = CONTENT_TYPES.json
   }
 
-  if (options.body instanceof FormData) {
-    headers.set('content-type', CONTENT_TYPES.formData)
+  if (opts.body instanceof FormData) {
+    opts.headers['content-type'] = CONTENT_TYPES.formData
   }
 
   const promise: RequestBody = new Promise<Response>((resolve, reject) => {
     let timerID: any
 
-    if (timeout > 0) {
+    if (opts.timeout > 0) {
       if (typeof AbortController === 'function') {
         const controller = new AbortController()
 
         timerID = setTimeout(() => {
           reject(TimeoutError())
           controller.abort()
-        }, timeout)
+        }, opts.timeout)
 
-        if (options.signal != null) {
-          options.signal.addEventListener('abort', () => {
+        if (opts.signal != null) {
+          opts.signal.addEventListener('abort', () => {
             clearTimeout(timerID)
             controller.abort()
           })
         }
 
-        init.signal = controller.signal
+        opts.signal = controller.signal
       } else {
-        timerID = setTimeout(() => reject(TimeoutError()), timeout)
+        timerID = setTimeout(() => reject(TimeoutError()), opts.timeout)
       }
     }
 
     // Running fetch in next tick allow us to set headers after creating promise
     setTimeout(() =>
-      fetchInstance(resource, init)
-        .then(onResponse)
+      fetch(resource, opts)
+        .then(opts.onResponse)
         .then(resolve, reject)
         .then(() => clearTimeout(timerID))
     )
-  }).then(onSuccess, onFailure)
+  }).then(opts.onSuccess, opts.onFailure)
 
   return (Object.keys(CONTENT_TYPES) as ContentTypes[]).reduce<RequestBody>(
     (acc, key) => {
       acc[key] = () => {
-        headers.set('accept', CONTENT_TYPES[key])
+        opts.headers.accept = CONTENT_TYPES[key]
         return promise
           .then((response) => response.clone())
           .then((response) => response[key]())
