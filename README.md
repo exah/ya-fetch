@@ -175,61 +175,21 @@ export function usePosts() {
 
 ### Instance
 
-`F.create(options?: Options): Instance` <br>
-`F.extend(options?: Options): Instance` <br>
-`F.options: Options`
+```ts
+type RequestFn = (resource: string, options?: Options) => RequestBody
 
-### Methods
-
-<details><summary><code>F(resource: string, options?: Options): Request</code> (alias to <code>.get</code>)</summary>
-
-```js
-fetch(resource, { method: 'GET', ...options })
+interface Instance extends RequestFn {
+  create(options?: Options): Instance
+  extend(options?: Options): Instance
+  options: Options
+  get: RequestFn
+  post: RequestFn
+  put: RequestFn
+  patch: RequestFn
+  head: RequestFn
+  delete: RequestFn
+}
 ```
-
-</details>
-<details><summary><code>F.get(resource: string, options?: Options): Request</code></summary>
-
-```js
-fetch(resource, { method: 'GET', ...options })
-```
-
-</details>
-<details><summary><code>F.post(resource: string, options?: Options): Request</code></summary>
-
-```js
-fetch(resource, { method: 'POST', ...options })
-```
-
-</details>
-<details><summary><code>F.put(resource: string, options?: Options): Request</code></summary>
-
-```js
-fetch(resource, { method: 'PUT', ...options })
-```
-
-</details>
-<details><summary><code>F.patch(resource: string, options?: Options): Request</code></summary>
-
-```js
-fetch(resource, { method: 'PATCH', ...options })
-```
-
-</details>
-<details><summary><code>F.delete(resource: string, options?: Options): Request</code></summary>
-
-```js
-fetch(resource, { method: 'DELETE', ...options })
-```
-
-</details>
-<details><summary><code>F.head(resource: string, options?: Options): Request</code></summary>
-
-```js
-fetch(resource, { method: 'HEAD', ...options })
-```
-
-</details>
 
 ### Options
 
@@ -258,10 +218,10 @@ interface Options extends RequestInit {
 }
 ```
 
-### Request
+### RequestBody
 
 ```ts
-interface Request extends Promise<Response> {
+interface RequestBody extends Promise<Response> {
   json?<T>(): Promise<T>
   text?(): Promise<string>
   blob?(): Promise<Blob>

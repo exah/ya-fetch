@@ -1,7 +1,9 @@
 type RequestMethods = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'HEAD' | 'DELETE'
 type ContentTypes = 'json' | 'text' | 'formData' | 'arrayBuffer' | 'blob'
 
-interface Request extends Promise<Response> {
+type RequestFn = (resource: string, options?: Options) => RequestBody
+
+interface RequestBody extends Promise<Response> {
   json?<T>(): Promise<T>
   text?(): Promise<string>
   blob?(): Promise<Blob>
@@ -30,6 +32,18 @@ interface Options extends RequestInit {
   onSuccess?(value: Response): Response
   /** Error handler, must throw an `Error` */
   onFailure?(error: Error): never
+}
+
+interface Instance extends RequestFn {
+  create(options?: Options): Instance
+  extend(options?: Options): Instance
+  options: Options
+  get: RequestFn
+  post: RequestFn
+  put: RequestFn
+  patch: RequestFn
+  head: RequestFn
+  delete: RequestFn
 }
 
 const CONTENT_TYPES: Record<ContentTypes, string> = {
@@ -89,7 +103,7 @@ const DEFAULT_OPTIONS: Options = {
   },
 }
 
-function request(baseResource: string, baseInit: Options): Request {
+function request(baseResource: string, baseInit: Options): RequestBody {
   const options = mergeOptions(DEFAULT_OPTIONS, baseInit)
 
   const {
@@ -119,7 +133,7 @@ function request(baseResource: string, baseInit: Options): Request {
     headers.set('content-type', CONTENT_TYPES.formData)
   }
 
-  const promise: Request = new Promise<Response>((resolve, reject) => {
+  const promise: RequestBody = new Promise<Response>((resolve, reject) => {
     let timerID: any
 
     if (timeout > 0) {
@@ -168,7 +182,7 @@ function request(baseResource: string, baseInit: Options): Request {
   return promise
 }
 
-function create(baseOptions?: Options) {
+function create(baseOptions?: Options): Instance {
   const extend = (options: Options) =>
     create(mergeOptions(baseOptions, options))
 
@@ -192,6 +206,6 @@ function create(baseOptions?: Options) {
   return Object.assign(intance.get, intance)
 }
 
-export { create, isAborted, isTimeout, ResponseError, TimeoutError }
+export { create, request, isAborted, isTimeout, ResponseError, TimeoutError }
 
 export default create()
