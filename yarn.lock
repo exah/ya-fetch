@@ -308,25 +308,25 @@
     "@nodelib/fs.scandir" "2.1.2"
     fastq "^1.6.0"
 
-"@size-limit/file@2.1.5":
-  version "2.1.5"
-  resolved "https://registry.yarnpkg.com/@size-limit/file/-/file-2.1.5.tgz#73451631a1289725645358c39ab754b99b86222b"
-  integrity sha512-TD46Xf3nCgDSJYA7cvOQLr2MyzQ7HnhbPzIjo4oH6p6C3WX6oemeT9jWRDvDJK9nYnqFRAlnsu2wqMJ4fg27qg==
+"@size-limit/file@2.1.6":
+  version "2.1.6"
+  resolved "https://registry.yarnpkg.com/@size-limit/file/-/file-2.1.6.tgz#007249f45bfea905b88b85f67ffb26558b56feef"
+  integrity sha512-t6tRlVbgACPkS2tc5i4LaH8uPxUWeCruaWwv+XRACdUUoJjCcsMlKiquiGE81qO+e3Yho3MUpoS2kPw1ij7U+Q==
   dependencies:
-    size-limit "2.1.5"
+    size-limit "2.1.6"
 
-"@size-limit/preset-small-lib@^2.1.5":
-  version "2.1.5"
-  resolved "https://registry.yarnpkg.com/@size-limit/preset-small-lib/-/preset-small-lib-2.1.5.tgz#6544f541063bda4c9bff5f52f27af02baccc2fe5"
-  integrity sha512-yBWU9xf6GdtKfYjTXQbWM0hCozDGJg6eIkhqJPxPCojhg82cWYsnJbkCVi5ShuhDsKZVwwvMWZcn2PQ6I8lVCQ==
+"@size-limit/preset-small-lib@^2.1.6":
+  version "2.1.6"
+  resolved "https://registry.yarnpkg.com/@size-limit/preset-small-lib/-/preset-small-lib-2.1.6.tgz#8a82b7ed2ed1bc64e8a8b120aa5bb7859d439555"
+  integrity sha512-KZ1rZqtwb0uJAEOdT46fG4xbkRxsWL8/6gM4MO90ylcbKKwgoaTgTDy7vx4PFIeY+Pg3zoNpZbR6nLSlu8MEiQ==
   dependencies:
-    "@size-limit/file" "2.1.5"
-    "@size-limit/webpack" "2.1.5"
+    "@size-limit/file" "2.1.6"
+    "@size-limit/webpack" "2.1.6"
 
-"@size-limit/webpack@2.1.5":
-  version "2.1.5"
-  resolved "https://registry.yarnpkg.com/@size-limit/webpack/-/webpack-2.1.5.tgz#411bcaa1048ba3c4fab2641c71c247d058ba1dee"
-  integrity sha512-/PBTHu4N/BI0QVxZO/cHJcmXGyA0ydS+GJozgPADDQcHoMpHTJnFZczctn9sfAjfbWwTCID10HW6mgWjKcxbuQ==
+"@size-limit/webpack@2.1.6":
+  version "2.1.6"
+  resolved "https://registry.yarnpkg.com/@size-limit/webpack/-/webpack-2.1.6.tgz#3dcbcff1002c1f38264e4678ecf038dba5aa6f7d"
+  integrity sha512-4rFbe7cpRngbdpAuCcghcRDwmJw8gqZE822sGsKlSd+iKOsivjziIuU+IqXZwRoCdCpNtN54bwZAM1lH7Q2g9g==
   dependencies:
     css-loader "^3.2.0"
     escape-string-regexp "^2.0.0"
@@ -334,9 +334,9 @@
     nanoid "^2.1.1"
     optimize-css-assets-webpack-plugin "^5.0.3"
     rimraf "^3.0.0"
-    size-limit "2.1.5"
+    size-limit "2.1.6"
     style-loader "^1.0.0"
-    webpack "^4.40.1"
+    webpack "^4.40.2"
     webpack-bundle-analyzer "^3.5.0"
 
 "@types/babel__core@^7.1.0":
@@ -2306,10 +2306,10 @@ eslint-plugin-node@^10.0.0:
     resolve "^1.10.1"
     semver "^6.1.0"
 
-eslint-plugin-prettier@^3.1.0:
-  version "3.1.0"
-  resolved "https://registry.yarnpkg.com/eslint-plugin-prettier/-/eslint-plugin-prettier-3.1.0.tgz#8695188f95daa93b0dc54b249347ca3b79c4686d"
-  integrity sha512-XWX2yVuwVNLOUhQijAkXz+rMPPoCr7WFiAl8ig6I7Xn+pPVhDhzg4DxHpmbeb0iqjO9UronEA3Tb09ChnFVHHA==
+eslint-plugin-prettier@^3.1.1:
+  version "3.1.1"
+  resolved "https://registry.yarnpkg.com/eslint-plugin-prettier/-/eslint-plugin-prettier-3.1.1.tgz#507b8562410d02a03f0ddc949c616f877852f2ba"
+  integrity sha512-A+TZuHZ0KU0cnn56/9mfR7/KjUJ9QNVXUhwvRFSR7PGPe0zQR6PTkmyqg1AtUUEOzTqeRsUwyKFh0oVZKVCrtA==
   dependencies:
     prettier-linter-helpers "^1.0.0"
 
@@ -4510,10 +4510,22 @@ nice-try@^1.0.4:
   resolved "https://registry.yarnpkg.com/nice-try/-/nice-try-1.0.5.tgz#a3378a7696ce7d223e88fc9b764bd7ef1089e366"
   integrity sha512-1nh45deeb5olNY7eX82BkPO7SSxR5SSYJiPTrTdFUVYwAl8CKMA5N9PjTYkHiRjisVcxcQ1HXdLhx2qxxJzLNQ==
 
-nock@*, nock@^11.3.4:
+nock@*:
   version "11.3.4"
   resolved "https://registry.yarnpkg.com/nock/-/nock-11.3.4.tgz#b3d8fde986da8f8484f4b8958e270fbb91250430"
   integrity sha512-Mqjk3DeOkuji8eYaveUku+vMswxzVyhrKAz1J9jE86IsEHQg4136Z/PHz81lcjyz9F3yrJXu56Gb/S+LFUOZVg==
+  dependencies:
+    chai "^4.1.2"
+    debug "^4.1.0"
+    json-stringify-safe "^5.0.1"
+    lodash "^4.17.13"
+    mkdirp "^0.5.0"
+    propagate "^2.0.0"
+
+nock@^11.3.5:
+  version "11.3.5"
+  resolved "https://registry.yarnpkg.com/nock/-/nock-11.3.5.tgz#f2c7b4b672a04c35342593b6bfd821497881199c"
+  integrity sha512-6WGeZcWc3RExkBcMSYSrUm/5YukDo52m/jhwniQyrnuiCnKRljBwwje9vTwJyEi4J6m2bq0Aj6C1vzuM6iuaeg==
   dependencies:
     chai "^4.1.2"
     debug "^4.1.0"
@@ -6102,10 +6114,10 @@ sisteransi@^1.0.3:
   resolved "https://registry.yarnpkg.com/sisteransi/-/sisteransi-1.0.3.tgz#98168d62b79e3a5e758e27ae63c4a053d748f4eb"
   integrity sha512-SbEG75TzH8G7eVXFSN5f9EExILKfly7SUvVY5DhhYLvfhKqhDFY0OzevWa/zwak0RLRfWS5AvfMWpd9gJvr5Yg==
 
-size-limit@2.1.5:
-  version "2.1.5"
-  resolved "https://registry.yarnpkg.com/size-limit/-/size-limit-2.1.5.tgz#f8b3caea5d1f6a5eb7c5778634965f378065ba69"
-  integrity sha512-MG+kALmBNAw46QwDr62uPJlfeUjnKy+fLvBjQbIh6egPPelMjDaDb4b9ZgaJa0EkJGVF9khCV1ne1uNWsMZZ6w==
+size-limit@2.1.6:
+  version "2.1.6"
+  resolved "https://registry.yarnpkg.com/size-limit/-/size-limit-2.1.6.tgz#d0a9ced5a08d1b73eaab149e66f16cb71bcfe985"
+  integrity sha512-BXrH1jMA6uXtqyv/9koJQocGn8pHogv5r+zs9eMFI+Qh5oQVmN0GPxK3ok5gkBFJ6AQ5Ug7LM1E8SDp635XG8Q==
   dependencies:
     bytes "^3.1.0"
     chalk "^2.4.2"
@@ -6977,7 +6989,7 @@ webpack-sources@^1.1.0, webpack-sources@^1.4.0, webpack-sources@^1.4.1:
     source-list-map "^2.0.0"
     source-map "~0.6.1"
 
-webpack@^4.40.1:
+webpack@^4.40.2:
   version "4.40.2"
   resolved "https://registry.yarnpkg.com/webpack/-/webpack-4.40.2.tgz#d21433d250f900bf0facbabe8f50d585b2dc30a7"
   integrity sha512-5nIvteTDCUws2DVvP9Qe+JPla7kWPPIDFZv55To7IycHWZ+Z5qBdaBYPyuXWdhggTufZkQwfIK+5rKQTVovm2A==
