@@ -10,9 +10,9 @@
   "module": "esm/index.js",
   "types": "types/index.d.ts",
   "files": [
-    "./esm",
-    "./cjs",
-    "./types"
+    "cjs",
+    "esm",
+    "types"
   ],
   "tags": [
     "fetch",
