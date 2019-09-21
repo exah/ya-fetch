@@ -18,7 +18,9 @@
     "build:cjs": "tsc -p tsconfig.cjs.json",
     "test": "jest",
     "lint": "eslint --ext ts --ext js src/",
-    "size": "size-limit"
+    "size": "size-limit",
+    "release": "np --no-cleanup",
+    "version": "auto-changelog -p && git add CHANGELOG.md"
   },
   "size-limit": [
     {
@@ -59,7 +61,9 @@
     }
   },
   "auto-changelog": {
+    "unreleased": true,
     "commitLimit": false,
+    "tagPattern": "^\\d+\\.\\d+.\\d+$",
     "template": ".changelog.hbs"
   },
   "jest": {
@@ -78,6 +82,7 @@
     "@types/prettier": "^1.18.2",
     "@typescript-eslint/parser": "^2.3.0",
     "abort-controller": "^3.0.0",
+    "auto-changelog": "^1.16.1",
     "eslint": "^6.4.0",
     "eslint-config-prettier": "^6.3.0",
     "eslint-config-standard": "^14.1.0",
@@ -92,6 +97,7 @@
     "jest": "^24.9.0",
     "nock": "^11.3.5",
     "node-fetch": "^2.6.0",
+    "np": "^5.1.0",
     "npm-run-all": "^4.1.5",
     "prettier": "^1.18.2",
     "ts-jest": "^24.1.0",
