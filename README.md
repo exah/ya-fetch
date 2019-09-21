@@ -18,11 +18,11 @@
 ## 📦 Install
 
 ```sh
-$ yarn add f-e-t-c-h
+$ yarn add @exah/f-e-t-c-h
 ```
 
 ```js
-import F from 'f-e-t-c-h'
+import F from '@exah/f-e-t-c-h'
 
 // inside an aync function
 const result = await F.patch('http://example.com/posts', {
@@ -40,7 +40,7 @@ console.log(result)
 
 ```js
 // api.js
-import F from 'f-e-t-c-h'
+import F from '@exah/f-e-t-c-h'
 
 const api = F.create({
   prefixUrl: 'https://jsonplaceholder.typicode.com',
@@ -108,7 +108,7 @@ fetch('http://example.com/posts', {
 Cancel request if it is not fulfilled in period of time.
 
 ```js
-import { isTimeout } from 'f-e-t-c-h'
+import { isTimeout } from '@exah/f-e-t-c-h'
 import api from './api'
 
 api
@@ -158,7 +158,7 @@ fetch('http://example.com/posts', {
 > This feature may require polyfill for [`AbortController`](https://developer.mozilla.org/en-US/docs/Web/API/AbortController.html) and `fetch`.
 
 ```js
-import { isAborted } from 'f-e-t-c-h'
+import { isAborted } from '@exah/f-e-t-c-h'
 import { useEffect, useState } from 'react'
 import api from './api'
 

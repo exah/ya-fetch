@@ -1,5 +1,5 @@
 {
-  "name": "f-e-t-c-h",
+  "name": "@exah/f-e-t-c-h",
   "version": "1.0.0",
   "description": "Super light-weight wrapper around fetch",
   "author": "John Grishin <hi@johngrish.in>",
