@@ -3,7 +3,6 @@
     "rootDir": "./src",
     "target": "es5",
     "lib": ["es2017", "es6", "dom"],
-    "sourceMap": true,
     "moduleResolution": "node",
     "strict": true,
     "strictNullChecks": false,

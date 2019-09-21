@@ -8,19 +8,23 @@
   "sideEffects": false,
   "main": "cjs/index.js",
   "module": "esm/index.js",
+  "types": "types/index.d.ts",
   "files": [
     "./esm",
-    "./cjs"
+    "./cjs",
+    "./types"
   ],
   "scripts": {
     "build": "run-s build:*",
     "build:esm": "tsc -p tsconfig.esm.json",
     "build:cjs": "tsc -p tsconfig.cjs.json",
+    "build:types": "tsc -p tsconfig.types.json",
     "test": "jest",
     "lint": "eslint --ext ts --ext js src/",
     "size": "size-limit",
     "release": "np --no-cleanup",
-    "version": "auto-changelog -p && git add CHANGELOG.md"
+    "version": "auto-changelog -p && git add CHANGELOG.md",
+    "preversion": "npm run build"
   },
   "size-limit": [
     {
