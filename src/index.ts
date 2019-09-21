@@ -44,6 +44,9 @@ interface Instance extends RequestFn {
   delete: RequestFn
 }
 
+const isFormData = typeof FormData === 'function'
+const isAbortController = typeof AbortController === 'function'
+
 const CONTENT_TYPES: Record<ContentTypes, string> = {
   json: 'application/json',
   text: 'text/*',
@@ -110,7 +113,7 @@ function request(baseResource: string, baseInit: Options): RequestBody {
     opts.headers['content-type'] = CONTENT_TYPES.json
   }
 
-  if (opts.body instanceof FormData) {
+  if (isFormData && opts.body instanceof FormData) {
     opts.headers['content-type'] = CONTENT_TYPES.formData
   }
 
@@ -118,7 +121,7 @@ function request(baseResource: string, baseInit: Options): RequestBody {
     let timerID: any
 
     if (opts.timeout > 0) {
-      if (typeof AbortController === 'function') {
+      if (isAbortController) {
         const controller = new AbortController()
 
         timerID = setTimeout(() => {
