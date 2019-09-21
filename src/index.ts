@@ -15,8 +15,11 @@ interface Options extends RequestInit {
   timeout?: number
   prefixUrl?: string
   headers?: Record<string, string>
-  onResponse?(response: Response): Response
   serialize?(params: unknown): string
+  fetch?(resource: string, init: RequestInit): Promise<Response>
+  onResponse?(response: Response): Response
+  onSuccess?(value: Response): Response
+  onFailure?(error: Error): never
 }
 
 const CONTENT_TYPES: Record<ContentTypes, string> = {
@@ -60,6 +63,7 @@ function isTimeout(error: Error) {
 const DEFAULT_OPTIONS: Options = {
   prefixUrl: '',
   credentials: 'same-origin',
+  fetch,
   serialize(params: URLSearchParams) {
     return new URLSearchParams(params).toString()
   },
@@ -70,6 +74,12 @@ const DEFAULT_OPTIONS: Options = {
 
     throw new ResponseError(response)
   },
+  onSuccess(response) {
+    return response
+  },
+  onFailure(error) {
+    throw error
+  },
 }
 
 function request(baseResource: string, baseInit: Options): Request {
@@ -78,8 +88,11 @@ function request(baseResource: string, baseInit: Options): Request {
     params,
     timeout,
     prefixUrl = '',
-    onResponse,
     serialize,
+    fetch: fetchInstance,
+    onResponse,
+    onSuccess,
+    onFailure,
     ...options
   } = mergeOptions(DEFAULT_OPTIONS, baseInit)
 
@@ -98,35 +111,39 @@ function request(baseResource: string, baseInit: Options): Request {
     headers.set('content-type', CONTENT_TYPES.formData)
   }
 
-  const promise: Request = new Promise((resolve, reject) => {
+  const promise: Request = new Promise<Response>((resolve, reject) => {
     let timerID: any
 
     if (timeout > 0) {
-      const controller = new AbortController()
+      if (typeof AbortController === 'function') {
+        const controller = new AbortController()
 
-      timerID = setTimeout(() => {
-        reject(new TimeoutError())
-        controller.abort()
-      }, timeout)
-
-      if (options.signal != null) {
-        options.signal.addEventListener('abort', () => {
-          clearTimeout(timerID)
+        timerID = setTimeout(() => {
+          reject(new TimeoutError())
           controller.abort()
-        })
-      }
+        }, timeout)
 
-      init.signal = controller.signal
+        if (options.signal != null) {
+          options.signal.addEventListener('abort', () => {
+            clearTimeout(timerID)
+            controller.abort()
+          })
+        }
+
+        init.signal = controller.signal
+      } else {
+        timerID = setTimeout(() => reject(new TimeoutError()), timeout)
+      }
     }
 
     // Running fetch in next tick allow us to set headers after creating promise
     setTimeout(() =>
-      fetch(resource, init)
+      fetchInstance(resource, init)
         .then(onResponse)
         .then(resolve, reject)
         .then(() => clearTimeout(timerID))
     )
-  })
+  }).then(onSuccess, onFailure)
 
   for (const [key, type] of Object.entries(CONTENT_TYPES) as [
     ContentTypes,
