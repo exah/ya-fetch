@@ -1,6 +1,6 @@
 {
   "name": "f-e-t-c-h",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Super light-weight wrapper around fetch",
   "author": "John Grishin <hi@johngrish.in>",
   "license": "MIT",
