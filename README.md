@@ -2,7 +2,7 @@
 
 > Super light-weight wrapper around `fetch`
 
-- [x] Only 1.18 KB minified & gziped
+- [x] Only 916 B when minified & gziped
 - [x] Only native API (polyfills required)
 - [x] TypeScript support
 - [x] Instance with custom defaults

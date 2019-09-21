@@ -40,27 +40,24 @@ const CONTENT_TYPES: Record<ContentTypes, string> = {
   blob: '*/*',
 }
 
-class ResponseError extends Error {
-  response: Response
-  constructor(response: Response) {
-    super(response.statusText)
-    this.name = 'ResponseError'
-    this.response = response
-  }
+function ResponseError(response: Response) {
+  return Object.assign(new Error(response.statusText), {
+    name: 'ResponseError',
+    response: response,
+  })
 }
 
-class TimeoutError extends Error {
-  constructor() {
-    super('Request timed out')
-    this.name = 'TimeoutError'
-  }
+function TimeoutError() {
+  return Object.assign(new Error('Request timed out'), {
+    name: 'TimeoutError',
+  })
 }
 
-const mergeOptions = (left: Options = {}, right: Options = {}) => ({
-  ...left,
-  ...right,
-  headers: { ...left.headers, ...right.headers },
-})
+const merge = (a?: unknown, b?: unknown, c?: unknown, d?: unknown) =>
+  Object.assign({}, a, b, c, d)
+
+const mergeOptions = (left: Options = {}, right: Options = {}): Options =>
+  merge(left, right, { headers: merge(left.headers, right.headers) })
 
 function isAborted(error: Error) {
   return error.name === 'AbortError'
@@ -82,7 +79,7 @@ const DEFAULT_OPTIONS: Options = {
       return response
     }
 
-    throw new ResponseError(response)
+    throw ResponseError(response)
   },
   onSuccess(response) {
     return response
@@ -93,6 +90,8 @@ const DEFAULT_OPTIONS: Options = {
 }
 
 function request(baseResource: string, baseInit: Options): Request {
+  const options = mergeOptions(DEFAULT_OPTIONS, baseInit)
+
   const {
     json,
     params,
@@ -103,14 +102,13 @@ function request(baseResource: string, baseInit: Options): Request {
     onResponse,
     onSuccess,
     onFailure,
-    ...options
-  } = mergeOptions(DEFAULT_OPTIONS, baseInit)
+  } = options
 
   const query = params == null ? '' : '?' + serialize(params)
   const resource = prefixUrl + baseResource + query
 
   const headers = new Headers(options.headers)
-  const init: RequestInit = { ...options, headers }
+  const init: RequestInit = merge(options, { headers })
 
   if (json != null) {
     init.body = JSON.stringify(json)
@@ -129,7 +127,7 @@ function request(baseResource: string, baseInit: Options): Request {
         const controller = new AbortController()
 
         timerID = setTimeout(() => {
-          reject(new TimeoutError())
+          reject(TimeoutError())
           controller.abort()
         }, timeout)
 
@@ -142,7 +140,7 @@ function request(baseResource: string, baseInit: Options): Request {
 
         init.signal = controller.signal
       } else {
-        timerID = setTimeout(() => reject(new TimeoutError()), timeout)
+        timerID = setTimeout(() => reject(TimeoutError()), timeout)
       }
     }
 
@@ -177,7 +175,7 @@ function create(baseOptions?: Options) {
   const createMethod = (method: RequestMethods) => (
     resource: string,
     options?: Options
-  ) => request(resource, mergeOptions(baseOptions, { method, ...options }))
+  ) => request(resource, mergeOptions(baseOptions, merge({ method }, options)))
 
   const intance = {
     create,
