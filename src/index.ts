@@ -1,7 +1,10 @@
 type RequestMethods = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'HEAD' | 'DELETE'
 type ContentTypes = 'json' | 'text' | 'formData' | 'arrayBuffer' | 'blob'
 
-type RequestFn = (resource: string, options?: Options) => RequestBody
+type RequestFn = <P = unknown, J = unknown>(
+  resource: string,
+  options?: Options<P, J>
+) => RequestBody
 
 interface RequestBody extends Promise<Response> {
   json?<T>(): Promise<T>
@@ -11,11 +14,11 @@ interface RequestBody extends Promise<Response> {
   formData?(): Promise<FormData>
 }
 
-interface Options extends RequestInit {
+interface Options<P = unknown, J = unknown> extends RequestInit {
   /** Object that will be stringified with `JSON.stringify` */
-  json?: unknown
+  json?: J
   /** Object that can be passed to `serialize` */
-  params?: unknown
+  params?: P
   /** Throw `TimeoutError`if timeout is passed */
   timeout?: number
   /** String that will prepended to `resource` in `fetch` instance */
@@ -23,7 +26,7 @@ interface Options extends RequestInit {
   /** Request headers */
   headers?: Record<string, string>
   /** Custom params serializer, default to `URLSearchParams` */
-  serialize?(params: Options['params']): string
+  serialize?(params: P): string
   /** Response handler, must handle status codes or throw `ResponseError` */
   onResponse?(response: Response): Response
   /** Response handler with sucess status codes 200-299 */
