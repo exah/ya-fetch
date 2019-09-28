@@ -11,11 +11,11 @@ interface RequestBody extends Promise<Response> {
   formData?(): Promise<FormData>
 }
 
-interface Options<J = unknown, P = unknown> extends RequestInit {
+interface Options extends RequestInit {
   /** Object that will be stringified with `JSON.stringify` */
-  json?: J
+  json?: unknown
   /** Object that can be passed to `serialize` */
-  params?: P
+  params?: unknown
   /** Throw `TimeoutError`if timeout is passed */
   timeout?: number
   /** String that will prepended to `resource` in `fetch` instance */
@@ -23,7 +23,7 @@ interface Options<J = unknown, P = unknown> extends RequestInit {
   /** Request headers */
   headers?: Record<string, string>
   /** Custom params serializer, default to `URLSearchParams` */
-  serialize?(params: P): string
+  serialize?(params: Options['params']): string
   /** Response handler, must handle status codes or throw `ResponseError` */
   onResponse?(response: Response): Response
   /** Response handler with sucess status codes 200-299 */
@@ -47,6 +47,15 @@ interface Instance extends RequestFn {
 const isFormData = typeof FormData === 'function'
 const isAbortController = typeof AbortController === 'function'
 
+const { keys, assign } = Object
+const merge = <T>(a?: T, b?: T, c?: T): T => assign({}, a, b, c)
+
+const mergeOptions = (left: Options = {}, right: Options = {}) =>
+  merge<Options>(left, right, {
+    headers: merge(left.headers, right.headers),
+    params: right.params ? merge(left.params, right.params) : left.params,
+  })
+
 const CONTENT_TYPES: Record<ContentTypes, string> = {
   json: 'application/json',
   text: 'text/*',
@@ -56,23 +65,17 @@ const CONTENT_TYPES: Record<ContentTypes, string> = {
 }
 
 function ResponseError(response: Response) {
-  return Object.assign(new Error(response.statusText), {
+  return assign(new Error(response.statusText), {
     name: 'ResponseError',
     response: response,
   })
 }
 
 function TimeoutError() {
-  return Object.assign(new Error('Request timed out'), {
+  return assign(new Error('Request timed out'), {
     name: 'TimeoutError',
   })
 }
-
-const merge = (a?: unknown, b?: unknown, c?: unknown, d?: unknown) =>
-  Object.assign({}, a, b, c, d)
-
-const mergeOptions = (left: Options = {}, right: Options = {}): Options =>
-  merge(left, right, { headers: merge(left.headers, right.headers) })
 
 function isAborted(error: Error) {
   return error.name === 'AbortError'
@@ -151,7 +154,7 @@ function request(baseResource: string, baseInit: Options): RequestBody {
     )
   }).then(opts.onSuccess, opts.onFailure)
 
-  return (Object.keys(CONTENT_TYPES) as ContentTypes[]).reduce<RequestBody>(
+  return (keys(CONTENT_TYPES) as ContentTypes[]).reduce<RequestBody>(
     (acc, key) => {
       acc[key] = () => {
         opts.headers.accept = CONTENT_TYPES[key]
@@ -186,7 +189,7 @@ function create(baseOptions?: Options): Instance {
     delete: createMethod('DELETE'),
   }
 
-  return Object.assign(intance.get, intance)
+  return assign(intance.get, intance)
 }
 
 export { create, request, isAborted, isTimeout, ResponseError, TimeoutError }

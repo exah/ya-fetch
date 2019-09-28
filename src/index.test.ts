@@ -78,6 +78,22 @@ describe('Instance', () => {
     expect(result).toBe('ok')
     scope.done()
   })
+
+  test('should merge `params` from instance and tranform to query string', async () => {
+    const scope = nock('http://localhost')
+      .get('/comments?userId=1&accessToken=1')
+      .reply(200, 'ok')
+
+    const api = SimplerFetch.create({
+      prefixUrl: 'http://localhost',
+      params: { accessToken: 1 },
+    })
+
+    const result = await api.get('/comments', { params: { userId: 1 } }).text()
+
+    expect(result).toBe('ok')
+    scope.done()
+  })
 })
 
 describe('Response', () => {
