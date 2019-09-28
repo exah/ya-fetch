@@ -321,7 +321,7 @@ describe('Methods', () => {
 
     test('should perform success post `formData` request', async () => {
       const scope = nock('http://localhost')
-        .matchHeader('content-type', 'multipart/form-data')
+        .matchHeader('content-type', /^multipart\/form-data;/)
         .post('/comments', /form-data; name="user"[\r\n]*test/)
         .reply(200, 'ok')
 
@@ -385,7 +385,7 @@ describe('Methods', () => {
 
     test('should perform success put `formData` request', async () => {
       const scope = nock('http://localhost')
-        .matchHeader('content-type', 'multipart/form-data')
+        .matchHeader('content-type', /^multipart\/form-data;/)
         .put('/comments', /form-data; name="user"[\r\n]*test/)
         .reply(200, 'ok')
 
@@ -449,7 +449,7 @@ describe('Methods', () => {
 
     test('should perform success patch `formData` request', async () => {
       const scope = nock('http://localhost')
-        .matchHeader('content-type', 'multipart/form-data')
+        .matchHeader('content-type', /^multipart\/form-data;/)
         .patch('/comments', /form-data; name="user"[\r\n]*test/)
         .reply(200, 'ok')
 

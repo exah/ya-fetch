@@ -44,9 +44,6 @@ interface Instance extends RequestFn {
   delete: RequestFn
 }
 
-const isFormData = typeof FormData === 'function'
-const isAbortController = typeof AbortController === 'function'
-
 const { keys, assign } = Object
 const merge = <T>(a?: T, b?: T, c?: T): T => assign({}, a, b, c)
 
@@ -116,15 +113,11 @@ function request(baseResource: string, baseInit: Options): RequestBody {
     opts.headers['content-type'] = CONTENT_TYPES.json
   }
 
-  if (isFormData && opts.body instanceof FormData) {
-    opts.headers['content-type'] = CONTENT_TYPES.formData
-  }
-
   const promise: RequestBody = new Promise<Response>((resolve, reject) => {
     let timerID: any
 
     if (opts.timeout > 0) {
-      if (isAbortController) {
+      if (typeof AbortController === 'function') {
         const controller = new AbortController()
 
         timerID = setTimeout(() => {
