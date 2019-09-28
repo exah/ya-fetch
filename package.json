@@ -82,7 +82,7 @@
   "auto-changelog": {
     "unreleased": true,
     "commitLimit": false,
-    "tagPattern": "^\\d+\\.\\d+.\\d+$",
+    "tagPattern": "\\d+\\.\\d+\\.\\d+$",
     "template": ".changelog.hbs"
   },
   "jest": {
