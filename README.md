@@ -211,18 +211,18 @@ api.get('/posts', { params: { userId: 1, tags: [1, 2] } })
 ### Instance
 
 ```ts
-type RequestFn = (resource: string, options?: Options) => RequestBody
+type Request = (resource: string, options?: Options) => ResponseBody
 
-interface Instance extends RequestFn {
+interface Instance extends Request {
   create(options?: Options): Instance
   extend(options?: Options): Instance
   options: Options
-  get: RequestFn
-  post: RequestFn
-  put: RequestFn
-  patch: RequestFn
-  head: RequestFn
-  delete: RequestFn
+  get: Request
+  post: Request
+  put: Request
+  patch: Request
+  head: Request
+  delete: Request
 }
 ```
 
@@ -233,7 +233,7 @@ interface Options extends RequestInit {
   /** Object that will be stringified with `JSON.stringify` */
   json?: unknown
   /** Object that can be passed to `serialize` */
-  params?: unknown
+  params?: Record<string, any>
   /** Throw `TimeoutError`if timeout is passed */
   timeout?: number
   /** String that will prepended to `resource` in `fetch` instance */
@@ -241,20 +241,25 @@ interface Options extends RequestInit {
   /** Request headers */
   headers?: Record<string, string>
   /** Custom params serializer, default to `URLSearchParams` */
-  serialize?(params: unknown): string
+  serialize?(params: Record<string, any>): URLSearchParams | string
   /** Response handler, must handle status codes or throw `ResponseError` */
-  onResponse?(response: Response): Response
+  onResponse?(
+    response: Response,
+    options: Options
+  ): Response | never | Promise<never>
   /** Response handler with sucess status codes 200-299 */
-  onSuccess?(value: Response): Response
+  onSuccess?(value: Response): Response | Promise<Response>
   /** Error handler, must throw an `Error` */
-  onFailure?(error: ResponseError): never
+  onFailure?(error: ResponseError): never | Promise<never>
+  /** Transform parsed JSON from response */
+  onJSON?(input: unknown): unknown
 }
 ```
 
-### RequestBody
+### ResponseBody
 
 ```ts
-interface RequestBody extends Promise<Response> {
+interface ResponseBody extends Promise<Response> {
   json?<T>(): Promise<T>
   text?(): Promise<string>
   blob?(): Promise<Blob>

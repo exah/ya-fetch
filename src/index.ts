@@ -34,6 +34,8 @@ interface Options extends RequestInit {
   onSuccess?(value: Response): Response | Promise<Response>
   /** Error handler, must throw an `Error` */
   onFailure?(error: ResponseError): never | Promise<never>
+  /** Transform parsed JSON from response */
+  onJSON?(input: unknown): unknown
 }
 
 interface Request {
@@ -97,6 +99,9 @@ const DEFAULTS: Options = {
   },
   onFailure(error) {
     throw error
+  },
+  onJSON(json) {
+    return json
   },
 }
 
@@ -191,6 +196,7 @@ function request(baseResource: string, baseOptions: Options): ResponseBody {
         return promise
           .then((response) => response.clone())
           .then((response) => response[key]())
+          .then((parsed) => (key === 'json' ? opts.onJSON(parsed) : parsed))
       }
       return acc
     },
