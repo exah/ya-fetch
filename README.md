@@ -110,7 +110,7 @@ fetch('http://example.com/posts', {
 Cancel request if it is not fulfilled in period of time.
 
 ```js
-import { isTimeout } from 'ya-fetch'
+import { isTimeoutError } from 'ya-fetch'
 import api from './api'
 
 api
@@ -118,7 +118,7 @@ api
   .json()
   .then((posts) => console.log(posts))
   .catch((error) => {
-    if (isTimeout(error)) {
+    if (isTimeoutError(error)) {
       // do something
     }
   })
@@ -160,7 +160,7 @@ fetch('http://example.com/posts', {
 > This feature may require polyfill for [`AbortController`](https://developer.mozilla.org/en-US/docs/Web/API/AbortController.html) and `fetch`.
 
 ```js
-import { isAborted } from 'ya-fetch'
+import { isAbortError } from 'ya-fetch'
 import { useEffect, useState } from 'react'
 import api from './api'
 
@@ -175,7 +175,7 @@ export function usePosts() {
       .json()
       .then((data) => setPosts(data))
       .catch((error) => {
-        if (isAborted(error)) {
+        if (isAbortError(error)) {
           // do something
         }
       })

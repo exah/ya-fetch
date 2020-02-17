@@ -1,24 +1,31 @@
 import nock from 'nock'
-import SimplerFetch, { isTimeout, isAborted } from './index'
+import queryString from 'query-string'
+import YF, {
+  ResponseError,
+  isTimeout,
+  isTimeoutError,
+  isAborted,
+  isAbortError,
+} from './index'
 
 afterEach(() => nock.cleanAll())
 
 describe('Instance', () => {
   test('should create new instance', () => {
-    const fetch = SimplerFetch.create()
+    const api = YF.create()
 
-    expect(fetch).toBeInstanceOf(Function)
-    expect(fetch.create).toBeInstanceOf(Function)
-    expect(fetch.extend).toBeInstanceOf(Function)
-    expect(fetch.get).toBeInstanceOf(Function)
-    expect(fetch.post).toBeInstanceOf(Function)
-    expect(fetch.put).toBeInstanceOf(Function)
-    expect(fetch.patch).toBeInstanceOf(Function)
-    expect(fetch.delete).toBeInstanceOf(Function)
-    expect(fetch.head).toBeInstanceOf(Function)
+    expect(api).toBeInstanceOf(Function)
+    expect(api.create).toBeInstanceOf(Function)
+    expect(api.extend).toBeInstanceOf(Function)
+    expect(api.get).toBeInstanceOf(Function)
+    expect(api.post).toBeInstanceOf(Function)
+    expect(api.put).toBeInstanceOf(Function)
+    expect(api.patch).toBeInstanceOf(Function)
+    expect(api.delete).toBeInstanceOf(Function)
+    expect(api.head).toBeInstanceOf(Function)
 
-    expect(fetch).toEqual(fetch.get)
-    expect(fetch.options).toBeUndefined()
+    expect(api).toEqual(api.get)
+    expect(api.options).toBeUndefined()
   })
 
   test('should prepend prefixUrl with create options', async () => {
@@ -26,15 +33,15 @@ describe('Instance', () => {
       .get('/comments')
       .reply(200, [1, 2, 3, 4])
 
-    const api = SimplerFetch.create({ prefixUrl: 'http://localhost' })
-    const result = await api.get('/comments').json()
+    const api = YF.create({ prefixUrl: 'http://localhost' })
+    const result = await api.get('/comments').json<number[]>()
 
     expect(result).toEqual([1, 2, 3, 4])
     scope.done()
   })
 
   test('should extend instance with new options', async () => {
-    const base = SimplerFetch.create({ prefixUrl: 'http://localhost' })
+    const base = YF.create({ prefixUrl: 'http://localhost' })
     expect(base.options.prefixUrl).toBe('http://localhost')
 
     const extended = base.extend({
@@ -60,7 +67,7 @@ describe('Instance', () => {
       .get('/comments')
       .reply(200, [1, 2, 3, 4])
 
-    const result = await SimplerFetch('http://localhost/comments').json()
+    const result = await YF('http://localhost/comments').json()
 
     expect(result).toEqual([1, 2, 3, 4])
     scope.done()
@@ -71,7 +78,7 @@ describe('Instance', () => {
       .get('/comments?userId=1')
       .reply(200, 'ok')
 
-    const result = await SimplerFetch.get('http://localhost/comments', {
+    const result = await YF.get('http://localhost/comments', {
       params: { userId: 1 },
     }).text()
 
@@ -84,12 +91,82 @@ describe('Instance', () => {
       .get('/comments?userId=1&accessToken=1')
       .reply(200, 'ok')
 
-    const api = SimplerFetch.create({
+    const api = YF.create({
       prefixUrl: 'http://localhost',
       params: { accessToken: 1 },
     })
 
     const result = await api.get('/comments', { params: { userId: 1 } }).text()
+
+    expect(result).toBe('ok')
+    scope.done()
+  })
+
+  test('should modify `json` response with `onJSON` method', async () => {
+    type Comments = number[]
+
+    const scope = nock('http://localhost')
+      .get('/comments')
+      .reply(200, { data: [1, 2, 3, 4] })
+
+    const api = YF.create({
+      prefixUrl: 'http://localhost',
+      onJSON: (parsed: { data: Comments }) => parsed.data,
+    })
+
+    const result = await api('/comments').json<Comments>()
+
+    expect(result).toEqual([1, 2, 3, 4])
+    scope.done()
+  })
+
+  test('should be able to return custom error `onFailure`', async () => {
+    enum ERRORS {
+      'Foo Error' = 100,
+    }
+
+    const scope = nock('http://localhost')
+      .get('/comments')
+      .reply(403, { errorCode: 100 })
+
+    const api = YF.create({
+      prefixUrl: 'http://localhost',
+      onFailure: async (error) => {
+        if (error.response.status === 403) {
+          const parsed = (await error.response.json()) as { errorCode: ERRORS }
+
+          throw ResponseError(error.response, ERRORS[parsed.errorCode])
+        }
+
+        throw error
+      },
+    })
+
+    try {
+      await api('/comments')
+    } catch (error) {
+      expect(error.message).toEqual('Foo Error')
+    }
+
+    scope.done()
+  })
+
+  test('should be possible to use custom `serialize` function', async () => {
+    const scope = nock('http://localhost')
+      .get('/comments?accessToken=1&users[]=1&users[]=2&users[]=3')
+      .reply(200, 'ok')
+
+    const api = YF.create({
+      prefixUrl: 'http://localhost',
+      params: { accessToken: '1' },
+      serialize(params) {
+        return queryString.stringify(params, { arrayFormat: 'bracket' })
+      },
+    })
+
+    const result = await api
+      .get('/comments', { params: { users: [1, 2, 3] } })
+      .text()
 
     expect(result).toBe('ok')
     scope.done()
@@ -102,7 +179,7 @@ describe('Response', () => {
       .get('/comments')
       .reply(200)
 
-    const result = await SimplerFetch.get('http://localhost/comments')
+    const result = await YF.get('http://localhost/comments')
 
     expect(result).toBeInstanceOf(Response)
     scope.done()
@@ -112,7 +189,10 @@ describe('Response', () => {
     const data = {
       firstName: 'Ivan',
       lastName: 'Grishin',
-      items: [{ id: 1, name: 'Backpack' }, { id: 2, name: 'Laptop' }],
+      items: [
+        { id: 1, name: 'Backpack' },
+        { id: 2, name: 'Laptop' },
+      ],
     }
 
     const scope = nock('http://localhost')
@@ -120,7 +200,7 @@ describe('Response', () => {
       .get('/comments')
       .reply(200, data)
 
-    const result = await SimplerFetch.get('http://localhost/comments').json()
+    const result = await YF.get('http://localhost/comments').json()
 
     expect(result).toEqual(data)
     scope.done()
@@ -132,7 +212,7 @@ describe('Response', () => {
       .get('/comments')
       .reply(200, 'ok')
 
-    const result = await SimplerFetch.get('http://localhost/comments').text()
+    const result = await YF.get('http://localhost/comments').text()
 
     expect(result).toBe('ok')
     scope.done()
@@ -144,7 +224,7 @@ describe('Response', () => {
       .get('/blob')
       .reply(200, 'test')
 
-    const result = await SimplerFetch.get('http://localhost/blob').arrayBuffer()
+    const result = await YF.get('http://localhost/blob').arrayBuffer()
 
     // @ts-ignore
     expect(String.fromCharCode(...new Uint8Array(result))).toBe('test')
@@ -159,7 +239,7 @@ describe('Response', () => {
       .get('/blob')
       .reply(200, 'test')
 
-    const result = await SimplerFetch.get('http://localhost/blob').blob()
+    const result = await YF.get('http://localhost/blob').blob()
 
     // @ts-ignore
     expect(await result.text()).toBe('test')
@@ -179,7 +259,7 @@ describe('Timeout', () => {
       .reply(200)
 
     try {
-      await SimplerFetch.get('http://localhost/comments', { timeout: 10 })
+      await YF.get('http://localhost/comments', { timeout: 10 })
     } catch (error) {
       expect(error.name).toBe('TimeoutError')
       expect(isTimeout(error)).toBe(true)
@@ -194,7 +274,7 @@ describe('Timeout', () => {
       .delayConnection(10)
       .reply(200)
 
-    await SimplerFetch.get('http://localhost/comments', { timeout: 20 })
+    await YF.get('http://localhost/comments', { timeout: 20 })
     scope.done()
   })
 })
@@ -212,7 +292,7 @@ describe('AbortController', () => {
 
     try {
       setTimeout(() => controller.abort(), 10)
-      await SimplerFetch.get('http://localhost/comments', {
+      await YF.get('http://localhost/comments', {
         signal: controller.signal,
       })
     } catch (error) {
@@ -235,7 +315,7 @@ describe('AbortController', () => {
 
     try {
       setTimeout(() => controller.abort(), 10)
-      await SimplerFetch.get('http://localhost/comments', {
+      await YF.get('http://localhost/comments', {
         signal: controller.signal,
         timeout: 15,
       })
@@ -259,7 +339,7 @@ describe('AbortController', () => {
 
     try {
       setTimeout(() => controller.abort(), 10)
-      await SimplerFetch.get('http://localhost/comments', {
+      await YF.get('http://localhost/comments', {
         signal: controller.signal,
         timeout: 5,
       })
@@ -279,7 +359,7 @@ describe('Methods', () => {
         .get('/comments')
         .reply(200, 'ok')
 
-      const result = await SimplerFetch.get('http://localhost/comments').text()
+      const result = await YF.get('http://localhost/comments').text()
 
       expect(result).toBe('ok')
       scope.done()
@@ -293,7 +373,7 @@ describe('Methods', () => {
         .reply(400)
 
       try {
-        await SimplerFetch.get('http://localhost/comments')
+        await YF.get('http://localhost/comments')
       } catch (error) {
         expect(error.name).toBe('ResponseError')
         expect(error.response).toBeInstanceOf(Response)
@@ -311,7 +391,7 @@ describe('Methods', () => {
         .post('/comments', { user: 'test' })
         .reply(200, 'ok')
 
-      const result = await SimplerFetch.post('http://localhost/comments', {
+      const result = await YF.post('http://localhost/comments', {
         json: { user: 'test' },
       }).text()
 
@@ -328,7 +408,7 @@ describe('Methods', () => {
       const body = new FormData()
       body.append('user', 'test')
 
-      const result = await SimplerFetch.post('http://localhost/comments', {
+      const result = await YF.post('http://localhost/comments', {
         body,
       }).text()
 
@@ -341,7 +421,7 @@ describe('Methods', () => {
         .post('/comments', 'data')
         .reply(200, 'ok')
 
-      const result = await SimplerFetch.post('http://localhost/comments', {
+      const result = await YF.post('http://localhost/comments', {
         body: 'data',
       }).text()
 
@@ -357,7 +437,7 @@ describe('Methods', () => {
         .reply(400)
 
       try {
-        await SimplerFetch.post('http://localhost/comments')
+        await YF.post('http://localhost/comments')
       } catch (error) {
         expect(error.name).toBe('ResponseError')
         expect(error.response).toBeInstanceOf(Response)
@@ -375,7 +455,7 @@ describe('Methods', () => {
         .put('/comments', { user: 'test' })
         .reply(200, 'ok')
 
-      const result = await SimplerFetch.put('http://localhost/comments', {
+      const result = await YF.put('http://localhost/comments', {
         json: { user: 'test' },
       }).text()
 
@@ -392,7 +472,7 @@ describe('Methods', () => {
       const body = new FormData()
       body.append('user', 'test')
 
-      const result = await SimplerFetch.put('http://localhost/comments', {
+      const result = await YF.put('http://localhost/comments', {
         body,
       }).text()
 
@@ -405,7 +485,7 @@ describe('Methods', () => {
         .put('/comments', 'data')
         .reply(200, 'ok')
 
-      const result = await SimplerFetch.put('http://localhost/comments', {
+      const result = await YF.put('http://localhost/comments', {
         body: 'data',
       }).text()
 
@@ -421,7 +501,7 @@ describe('Methods', () => {
         .reply(400)
 
       try {
-        await SimplerFetch.put('http://localhost/comments')
+        await YF.put('http://localhost/comments')
       } catch (error) {
         expect(error.name).toBe('ResponseError')
         expect(error.response).toBeInstanceOf(Response)
@@ -439,7 +519,7 @@ describe('Methods', () => {
         .patch('/comments', { user: 'test' })
         .reply(200, 'ok')
 
-      const result = await SimplerFetch.patch('http://localhost/comments', {
+      const result = await YF.patch('http://localhost/comments', {
         json: { user: 'test' },
       }).text()
 
@@ -456,7 +536,7 @@ describe('Methods', () => {
       const body = new FormData()
       body.append('user', 'test')
 
-      const result = await SimplerFetch.patch('http://localhost/comments', {
+      const result = await YF.patch('http://localhost/comments', {
         body,
       }).text()
 
@@ -469,7 +549,7 @@ describe('Methods', () => {
         .patch('/comments', 'data')
         .reply(200, 'ok')
 
-      const result = await SimplerFetch.patch('http://localhost/comments', {
+      const result = await YF.patch('http://localhost/comments', {
         body: 'data',
       }).text()
 
@@ -485,7 +565,7 @@ describe('Methods', () => {
         .reply(400)
 
       try {
-        await SimplerFetch.patch('http://localhost/comments')
+        await YF.patch('http://localhost/comments')
       } catch (error) {
         expect(error.name).toBe('ResponseError')
         expect(error.response).toBeInstanceOf(Response)
@@ -502,9 +582,7 @@ describe('Methods', () => {
         .delete('/comments/1')
         .reply(200, 'ok')
 
-      const result = await SimplerFetch.delete(
-        'http://localhost/comments/1'
-      ).text()
+      const result = await YF.delete('http://localhost/comments/1').text()
 
       expect(result).toBe('ok')
       scope.done()
@@ -518,7 +596,7 @@ describe('Methods', () => {
         .reply(400)
 
       try {
-        await SimplerFetch.delete('http://localhost/comments/1')
+        await YF.delete('http://localhost/comments/1')
       } catch (error) {
         expect(error.name).toBe('ResponseError')
         expect(error.response).toBeInstanceOf(Response)
@@ -535,7 +613,7 @@ describe('Methods', () => {
         .head('/comments/1')
         .reply(200)
 
-      const response = await SimplerFetch.head('http://localhost/comments/1')
+      const response = await YF.head('http://localhost/comments/1')
 
       expect(response.status).toBe(200)
       scope.done()
@@ -549,7 +627,7 @@ describe('Methods', () => {
         .reply(400)
 
       try {
-        await SimplerFetch.head('http://localhost/comments/1')
+        await YF.head('http://localhost/comments/1')
       } catch (error) {
         expect(error.name).toBe('ResponseError')
         expect(error.response).toBeInstanceOf(Response)
@@ -558,5 +636,15 @@ describe('Methods', () => {
 
       scope.done()
     })
+  })
+})
+
+describe('compatibility', () => {
+  test('renamed `isTimeout` should be same as `isTimeoutError`', () => {
+    expect(isTimeout).toBe(isTimeoutError)
+  })
+
+  test('renamed `isTimeout` should be same as `isTimeoutError`', () => {
+    expect(isAborted).toBe(isAbortError)
   })
 })

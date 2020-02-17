@@ -1,12 +1,10 @@
 type RequestMethods = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'HEAD' | 'DELETE'
 type ContentTypes = 'json' | 'text' | 'formData' | 'arrayBuffer' | 'blob'
 
-type RequestFn = <P = unknown, J = unknown>(
-  resource: string,
-  options?: Options<P, J>
-) => RequestBody
+type Headers = Record<string, string>
+type Params = Record<string, any>
 
-interface RequestBody extends Promise<Response> {
+interface ResponseBody extends Promise<Response> {
   json?<T>(): Promise<T>
   text?(): Promise<string>
   blob?(): Promise<Blob>
@@ -14,47 +12,58 @@ interface RequestBody extends Promise<Response> {
   formData?(): Promise<FormData>
 }
 
-interface Options<P = unknown, J = unknown> extends RequestInit {
+interface Options extends RequestInit {
   /** Object that will be stringified with `JSON.stringify` */
-  json?: J
+  json?: unknown
   /** Object that can be passed to `serialize` */
-  params?: P
+  params?: Params
   /** Throw `TimeoutError`if timeout is passed */
   timeout?: number
   /** String that will prepended to `resource` in `fetch` instance */
   prefixUrl?: string
   /** Request headers */
-  headers?: Record<string, string>
+  headers?: Headers
   /** Custom params serializer, default to `URLSearchParams` */
-  serialize?(params: P): string
+  serialize?(params: Params): URLSearchParams | string
   /** Response handler, must handle status codes or throw `ResponseError` */
-  onResponse?(response: Response): Response
+  onResponse?(
+    response: Response,
+    options: Options
+  ): Response | never | Promise<never>
   /** Response handler with sucess status codes 200-299 */
-  onSuccess?(value: Response): Response
+  onSuccess?(value: Response): Response | Promise<Response>
   /** Error handler, must throw an `Error` */
-  onFailure?(error: Error): never
+  onFailure?(error: ResponseError): never | Promise<never>
 }
 
-interface Instance extends RequestFn {
+interface Request {
+  (resource: string, options?: Options): ResponseBody
+}
+
+interface Instance extends Request {
   create(options?: Options): Instance
   extend(options?: Options): Instance
   options: Options
-  get: RequestFn
-  post: RequestFn
-  put: RequestFn
-  patch: RequestFn
-  head: RequestFn
-  delete: RequestFn
+  get: Request
+  post: Request
+  put: Request
+  patch: Request
+  head: Request
+  delete: Request
 }
 
-const { keys, assign } = Object
-const merge = <T>(a?: T, b?: T, c?: T): T => assign({}, a, b, c)
+type ResponseError = Error & {
+  name: 'ResponseError'
+  response: Response
+}
 
-const mergeOptions = (left: Options = {}, right: Options = {}) =>
-  merge<Options>(left, right, {
-    headers: merge(left.headers, right.headers),
-    params: right.params ? merge(left.params, right.params) : left.params,
-  })
+type TimeoutError = Error & {
+  name: 'TimeoutError'
+}
+
+type AbortError = Error & {
+  name: 'AbortError'
+}
 
 const CONTENT_TYPES: Record<ContentTypes, string> = {
   json: 'application/json',
@@ -62,34 +71,19 @@ const CONTENT_TYPES: Record<ContentTypes, string> = {
   formData: 'multipart/form-data',
   arrayBuffer: '*/*',
   blob: '*/*',
-}
+} as const
 
-function ResponseError(response: Response) {
-  return assign(new Error(response.statusText), {
-    name: 'ResponseError',
-    response: response,
-  })
-}
+const ERROR_NAMES = {
+  Response: 'ResponseError',
+  Timeout: 'TimeoutError',
+  Abort: 'AbortError',
+} as const
 
-function TimeoutError() {
-  return assign(new Error('Request timed out'), {
-    name: 'TimeoutError',
-  })
-}
-
-function isAborted(error: Error) {
-  return error.name === 'AbortError'
-}
-
-function isTimeout(error: Error) {
-  return error.name === 'TimeoutError'
-}
-
-const DEFAULT_OPTIONS: Options = {
+const DEFAULTS: Options = {
   prefixUrl: '',
   credentials: 'same-origin',
-  serialize(params: URLSearchParams) {
-    return new URLSearchParams(params).toString()
+  serialize(params: Record<string, any>) {
+    return new URLSearchParams(params)
   },
   onResponse(response) {
     if (response.ok) {
@@ -106,9 +100,49 @@ const DEFAULT_OPTIONS: Options = {
   },
 }
 
-function request(baseResource: string, baseInit: Options): RequestBody {
-  const opts = mergeOptions(DEFAULT_OPTIONS, baseInit)
-  const query = opts.params == null ? '' : '?' + opts.serialize(opts.params)
+const { keys, assign } = Object
+const merge = <T>(a?: T, b?: T): T => assign({}, a, b)
+
+const mergeOptions = (left: Options = {}, right: Options = {}) =>
+  merge(merge(left, right), {
+    headers: merge(left.headers, right.headers),
+    params: merge(left.params, right.params),
+  })
+
+function ResponseError(
+  response: Response,
+  message = response.statusText || String(response.status)
+): ResponseError {
+  return assign(new Error(message), {
+    name: ERROR_NAMES.Response,
+    response: response,
+  })
+}
+
+function TimeoutError(): TimeoutError {
+  return assign(new Error('Request timed out'), {
+    name: ERROR_NAMES.Timeout,
+  })
+}
+
+function isResponseError(error: any): error is ResponseError {
+  return error.name === ERROR_NAMES.Response
+}
+
+function isAbortError(error: any): error is AbortError {
+  return error.name === ERROR_NAMES.Abort
+}
+
+function isTimeoutError(error: any): error is TimeoutError {
+  return error.name === ERROR_NAMES.Timeout
+}
+
+function request(baseResource: string, baseOptions: Options): ResponseBody {
+  const opts = mergeOptions(DEFAULTS, baseOptions)
+  const query = keys(opts.params).length
+    ? '?' + opts.serialize(opts.params)
+    : ''
+
   const resource = opts.prefixUrl + baseResource + query
 
   if (opts.json != null) {
@@ -116,7 +150,7 @@ function request(baseResource: string, baseInit: Options): RequestBody {
     opts.headers['content-type'] = CONTENT_TYPES.json
   }
 
-  const promise: RequestBody = new Promise<Response>((resolve, reject) => {
+  const promise: ResponseBody = new Promise<Response>((resolve, reject) => {
     let timerID: any
 
     if (opts.timeout > 0) {
@@ -144,13 +178,13 @@ function request(baseResource: string, baseInit: Options): RequestBody {
     // Running fetch in next tick allow us to set headers after creating promise
     setTimeout(() =>
       fetch(resource, opts)
-        .then(opts.onResponse)
+        .then((response) => opts.onResponse(response, opts))
         .then(resolve, reject)
         .then(() => clearTimeout(timerID))
     )
   }).then(opts.onSuccess, opts.onFailure)
 
-  return (keys(CONTENT_TYPES) as ContentTypes[]).reduce<RequestBody>(
+  return (keys(CONTENT_TYPES) as ContentTypes[]).reduce<ResponseBody>(
     (acc, key) => {
       acc[key] = () => {
         opts.headers.accept = CONTENT_TYPES[key]
@@ -188,6 +222,16 @@ function create(baseOptions?: Options): Instance {
   return assign(intance.get, intance)
 }
 
-export { create, request, isAborted, isTimeout, ResponseError, TimeoutError }
+export {
+  create,
+  request,
+  isAbortError,
+  isAbortError as isAborted, // COMPAT
+  isTimeoutError,
+  isTimeoutError as isTimeout, // COMPAT
+  isResponseError,
+  ResponseError,
+  TimeoutError,
+}
 
 export default create()
