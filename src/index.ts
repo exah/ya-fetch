@@ -118,7 +118,7 @@ const { keys, assign } = Object
 const empty = {}
 const merge = <A, B>(a?: A, b?: B): A & B => assign({}, a, b)
 
-const mergeOptions = <A, B extends Payload>(
+const mergeOptions = <A, B>(
   left: Options<A> = empty,
   right: Options<B> = empty
 ) =>
