@@ -246,11 +246,14 @@ interface Options extends RequestInit {
   onResponse?(
     response: Response,
     options: Options
-  ): Response | never | Promise<never>
+  ): Response | Promise<Response> | never | Promise<never>
   /** Response handler with sucess status codes 200-299 */
-  onSuccess?(value: Response): Response | Promise<Response>
+  onSuccess?(response: Response, options: Options): Response | Promise<Response>
   /** Error handler, must throw an `Error` */
-  onFailure?(error: ResponseError): never | Promise<never>
+  onFailure?(
+    error: ResponseError | AbortError | TimeoutError | Error,
+    options: Options
+  ): never | Promise<never>
   /** Transform parsed JSON from response */
   onJSON?(input: unknown): unknown
 }

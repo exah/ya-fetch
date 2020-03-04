@@ -3,6 +3,7 @@ import queryString from 'query-string'
 import YF, {
   ResponseError,
   isTimeout,
+  isResponseError,
   isTimeoutError,
   isAborted,
   isAbortError,
@@ -131,11 +132,15 @@ describe('Instance', () => {
 
     const api = YF.create({
       prefixUrl: 'http://localhost',
-      onFailure: async (error) => {
-        if (error.response.status === 403) {
-          const parsed = (await error.response.json()) as { errorCode: ERRORS }
+      onFailure: async (error, opts) => {
+        if (isResponseError(error)) {
+          if (error.response.status === 403) {
+            const parsed = (await error.response.json()) as {
+              errorCode: ERRORS
+            }
 
-          throw ResponseError(error.response, ERRORS[parsed.errorCode])
+            throw ResponseError(error.response, ERRORS[parsed.errorCode])
+          }
         }
 
         throw error
