@@ -221,17 +221,17 @@ function request<P extends Payload>(baseOptions: Options<P>): ResponseBody {
 
 function create<P extends Payload>(baseOptions?: Options<P>): Instance<P> {
   const extend = <T extends P>(options: Options<T>) =>
-    create<T>(mergeOptions(baseOptions, options))
+    create<T>(mergeOptions(instance.options, options))
 
   const createMethod = (method: RequestMethods) => <T extends P>(
     resource: string,
     options?: Omit<Options<T>, 'method' | 'resource'>
   ) =>
     request<P & T>(
-      mergeOptions(baseOptions, merge({ resource, method }, options))
+      mergeOptions(instance.options, merge({ resource, method }, options))
     )
 
-  const intance = {
+  const instance = {
     create,
     extend,
     options: baseOptions,
@@ -243,7 +243,7 @@ function create<P extends Payload>(baseOptions?: Options<P>): Instance<P> {
     delete: createMethod('DELETE'),
   }
 
-  return assign(intance.get, intance)
+  return assign(instance.get, instance)
 }
 
 export {

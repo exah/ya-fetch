@@ -63,6 +63,25 @@ describe('Instance', () => {
     scope.done()
   })
 
+  test('should be possible to modify options in instance', async () => {
+    const api = YF.create({ prefixUrl: 'http://localhost' })
+    expect(api.options.prefixUrl).toBe('http://localhost')
+
+    api.options.prefixUrl = 'https://example.com'
+    api.options.headers = { Authorization: 'Bearer ::Token::' }
+
+    expect(api.options.prefixUrl).toBe('https://example.com')
+    expect(api.options.headers.Authorization).toBe('Bearer ::Token::')
+
+    const scope = nock('https://example.com')
+      .matchHeader('Authorization', 'Bearer ::Token::')
+      .get('/comments')
+      .reply(200)
+
+    await api.get('/comments')
+    scope.done()
+  })
+
   test('default request method should be GET', async () => {
     const scope = nock('http://localhost')
       .get('/comments')
