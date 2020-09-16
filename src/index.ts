@@ -6,11 +6,11 @@ type Params = Record<string, any>
 type Payload = { json?: unknown; params?: Params }
 
 interface ResponseBody extends Promise<Response> {
-  json?<T>(): Promise<T>
-  text?(): Promise<string>
-  blob?(): Promise<Blob>
-  arrayBuffer?(): Promise<ArrayBuffer>
-  formData?(): Promise<FormData>
+  json<T>(): Promise<T>
+  text(): Promise<string>
+  blob(): Promise<Blob>
+  arrayBuffer(): Promise<ArrayBuffer>
+  formData(): Promise<FormData>
 }
 
 interface Options<T extends Payload> extends RequestInit {
@@ -76,7 +76,7 @@ type AbortError = Error & {
   name: 'AbortError'
 }
 
-const CONTENT_TYPES: Record<ContentTypes, string> = {
+const CONTENT_TYPES = {
   json: 'application/json',
   text: 'text/*',
   formData: 'multipart/form-data',
@@ -168,7 +168,7 @@ function request<P extends Payload>(baseOptions: Options<P>): ResponseBody {
     opts.headers['content-type'] = CONTENT_TYPES.json
   }
 
-  const promise: ResponseBody = new Promise<Response>((resolve, reject) => {
+  const promise = new Promise<Response>((resolve, reject) => {
     let timerID: any
 
     if (opts.timeout > 0) {
@@ -204,8 +204,8 @@ function request<P extends Payload>(baseOptions: Options<P>): ResponseBody {
     .then((response) => opts.onSuccess(response, opts))
     .catch((error) => opts.onFailure(error, opts))
 
-  return (keys(CONTENT_TYPES) as ContentTypes[]).reduce<ResponseBody>(
-    (acc, key) => {
+  return (keys(CONTENT_TYPES) as ContentTypes[]).reduce(
+    (acc, key: ContentTypes) => {
       acc[key] = () => {
         opts.headers.accept = CONTENT_TYPES[key]
         return promise
@@ -215,7 +215,7 @@ function request<P extends Payload>(baseOptions: Options<P>): ResponseBody {
       }
       return acc
     },
-    promise
+    promise as ResponseBody
   )
 }
 
