@@ -26,6 +26,8 @@ interface Options<T extends Payload> extends RequestInit {
   prefixUrl?: string
   /** Request headers */
   headers?: Headers
+  /** Request headers (async getter) */
+  getHeaders?: () => Headers | Promise<Headers>
   /** Custom params serializer, default to `URLSearchParams` */
   serialize?(params: Options<T>['params']): URLSearchParams | string
   /** Response handler, must handle status codes or throw `ResponseError` */
@@ -127,6 +129,15 @@ const mergeOptions = <A, B>(
     params: merge(left.params, right.params),
   })
 
+const fnToPromise = <T>(fn: () => T | Promise<T>): Promise<T> => {
+  try {
+    return Promise.resolve(fn())
+  } catch (e) {
+    // pick up synchronous throws
+    Promise.reject(e)
+  }
+}
+
 function ResponseError(
   response: Response,
   message = response.statusText || String(response.status)
@@ -194,12 +205,20 @@ function request<P extends Payload>(baseOptions: Options<P>): ResponseBody {
     }
 
     // Running fetch in next tick allow us to set headers after creating promise
-    setTimeout(() =>
-      fetch(resource, opts)
-        .then((response) => opts.onResponse(response, opts))
-        .then(resolve, reject)
-        .then(() => clearTimeout(timerID))
-    )
+    setTimeout(() => {
+      const dynamicHeadersPromise =
+        typeof opts.getHeaders !== 'function'
+          ? Promise.resolve({})
+          : fnToPromise(opts.getHeaders)
+
+      return dynamicHeadersPromise.then((dynamicHeaders) => {
+        opts.headers = merge(opts.headers, dynamicHeaders)
+        return fetch(resource, opts)
+          .then((response) => opts.onResponse(response, opts))
+          .then(resolve, reject)
+          .then(() => clearTimeout(timerID))
+      })
+    })
   })
     .then((response) => opts.onSuccess(response, opts))
     .catch((error) => opts.onFailure(error, opts))
