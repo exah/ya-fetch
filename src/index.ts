@@ -129,14 +129,8 @@ const mergeOptions = <A, B>(
     params: merge(left.params, right.params),
   })
 
-const fnToPromise = <T>(fn: () => T | Promise<T>): Promise<T> => {
-  try {
-    return Promise.resolve(fn())
-  } catch (e) {
-    // pick up synchronous throws
-    Promise.reject(e)
-  }
-}
+const fnToPromise = <T>(fn: () => T | Promise<T>): Promise<T> =>
+  Promise.resolve().then(fn)
 
 function ResponseError(
   response: Response,
