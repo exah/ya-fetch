@@ -271,6 +271,61 @@ describe('Response', () => {
     expect(result.type).toBeDefined()
     scope.done()
   })
+
+  test('should be possible to get headers with a function', async () => {
+    const scope = nock('https://example.com')
+    const state = { token: 'none' }
+    const api = YF.create({
+      prefixUrl: 'https://example.com',
+      getHeaders: () => ({ Authorization: `Bearer ${state.token}` }),
+    })
+
+    scope
+      .get('/comments')
+      .matchHeader('Authorization', 'Bearer token-1')
+      .reply(200)
+    state.token = 'token-1'
+    await api.get('/comments')
+
+    scope
+      .get('/users')
+      .matchHeader('Authorization', 'Bearer token-2')
+      .reply(200)
+    state.token = 'token-2'
+    await api.get('/users')
+
+    scope.done()
+  })
+
+  test('should be possible to get headers with an async function', async () => {
+    const scope = nock('https://example.com')
+    const state = { token: 'none' }
+    const api = YF.create({
+      prefixUrl: 'https://example.com',
+      getHeaders: async () => {
+        await new Promise(resolve => setTimeout(resolve, 32))
+        return {Authorization: `Bearer ${state.token}`}
+      },
+    })
+
+    scope
+      .get('/comments')
+      .matchHeader('Authorization', 'Bearer token-1')
+      .reply(200)
+    state.token = 'pre-token-1'
+    setTimeout(() => {state.token = 'token-1'}, 16)
+    await api.get('/comments')
+
+    scope
+      .get('/users')
+      .matchHeader('Authorization', 'Bearer token-2')
+      .reply(200)
+    state.token = 'pre-token-2'
+    setTimeout(() => {state.token = 'token-2'}, 16)
+    await api.get('/users')
+
+    scope.done()
+  })
 })
 
 describe('Timeout', () => {
