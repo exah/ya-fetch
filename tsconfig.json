@@ -6,7 +6,8 @@
     "moduleResolution": "node",
     "strict": true,
     "strictNullChecks": false,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "skipLibCheck": true
   },
   "exclude": ["node_modules"],
   "include": ["./src"]
