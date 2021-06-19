@@ -303,8 +303,8 @@ describe('Response', () => {
     const api = YF.create({
       prefixUrl: 'https://example.com',
       getHeaders: async () => {
-        await new Promise(resolve => setTimeout(resolve, 32))
-        return {Authorization: `Bearer ${state.token}`}
+        await new Promise((resolve) => setTimeout(resolve, 32))
+        return { Authorization: `Bearer ${state.token}` }
       },
     })
 
@@ -313,7 +313,9 @@ describe('Response', () => {
       .matchHeader('Authorization', 'Bearer token-1')
       .reply(200)
     state.token = 'pre-token-1'
-    setTimeout(() => {state.token = 'token-1'}, 16)
+    setTimeout(() => {
+      state.token = 'token-1'
+    }, 16)
     await api.get('/comments')
 
     scope
@@ -321,7 +323,9 @@ describe('Response', () => {
       .matchHeader('Authorization', 'Bearer token-2')
       .reply(200)
     state.token = 'pre-token-2'
-    setTimeout(() => {state.token = 'token-2'}, 16)
+    setTimeout(() => {
+      state.token = 'token-2'
+    }, 16)
     await api.get('/users')
 
     scope.done()

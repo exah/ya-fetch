@@ -129,9 +129,6 @@ const mergeOptions = <A, B>(
     params: merge(left.params, right.params),
   })
 
-const fnToPromise = <T>(fn: () => T | Promise<T>): Promise<T> =>
-  Promise.resolve().then(fn)
-
 function ResponseError(
   response: Response,
   message = response.statusText || String(response.status)
@@ -199,37 +196,31 @@ function request<P extends Payload>(baseOptions: Options<P>): ResponseBody {
     }
 
     // Running fetch in next tick allow us to set headers after creating promise
-    setTimeout(() => {
-      const dynamicHeadersPromise =
-        typeof opts.getHeaders !== 'function'
-          ? Promise.resolve({})
-          : fnToPromise(opts.getHeaders)
-
-      return dynamicHeadersPromise.then((dynamicHeaders) => {
-        opts.headers = merge(opts.headers, dynamicHeaders)
-        return fetch(resource, opts)
-          .then((response) => opts.onResponse(response, opts))
-          .then(resolve, reject)
-          .then(() => clearTimeout(timerID))
-      })
-    })
+    setTimeout(() =>
+      Promise.resolve()
+        .then(opts.getHeaders)
+        .then((headers) => assign(opts.headers, headers))
+        .then(() =>
+          fetch(resource, opts)
+            .then((response) => opts.onResponse(response, opts))
+            .then(resolve, reject)
+            .then(() => clearTimeout(timerID))
+        )
+    )
   })
     .then((response) => opts.onSuccess(response, opts))
     .catch((error) => opts.onFailure(error, opts))
 
-  return (keys(CONTENT_TYPES) as ContentTypes[]).reduce(
-    (acc, key: ContentTypes) => {
-      acc[key] = () => {
-        opts.headers.accept = CONTENT_TYPES[key]
-        return promise
-          .then((response) => response.clone())
-          .then((response) => response[key]())
-          .then((parsed) => (key === 'json' ? opts.onJSON(parsed) : parsed))
-      }
-      return acc
-    },
-    promise as ResponseBody
-  )
+  return (keys(CONTENT_TYPES) as ContentTypes[]).reduce((acc, key) => {
+    acc[key] = () => {
+      opts.headers.accept = CONTENT_TYPES[key]
+      return promise
+        .then((response) => response.clone())
+        .then((response) => response[key]())
+        .then((parsed) => (key === 'json' ? opts.onJSON(parsed) : parsed))
+    }
+    return acc
+  }, promise as ResponseBody)
 }
 
 function create<P extends Payload>(baseOptions?: Options<P>): Instance<P> {
