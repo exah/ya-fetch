@@ -4,7 +4,7 @@
 
 > Super light-weight wrapper around `fetch`
 
-- [x] Only 822 B when minified & gziped
+- [x] Only 935 B when minified & gziped
 - [x] Only native API (polyfills for `fetch`, `AbortController` required)
 - [x] TypeScript support
 - [x] Instance with custom defaults
@@ -13,8 +13,6 @@
 - [x] First class JSON support
 - [x] Search params
 - [x] Timeouts
-- [ ] ~~Progress tracking~~
-- [ ] ~~Retry~~
 - [x] Zero deps
 
 ## 📦 Install
@@ -104,6 +102,27 @@ fetch('http://example.com/posts', {
 ```
 
 </details>
+
+### Instance with dynamic headers
+
+You can use an async or regular function to return headers for request dynamically.
+
+```js
+// api.js
+import YF from 'ya-fetch'
+import { getToken } from './async-state'
+
+const api = YF.create({
+  prefixUrl: 'https://jsonplaceholder.typicode.com',
+  async getHeaders() {
+    return {
+      Authorization: `Bearer ${await getToken()}`,
+    }
+  },
+})
+
+export default api
+```
 
 ### Timeout
 
@@ -211,7 +230,9 @@ api.get('/posts', { params: { userId: 1, tags: [1, 2] } })
 ### Instance
 
 ```ts
-type Request = (resource: string, options?: Options) => ResponseBody
+interface Request {
+  (resource: string, options?: Options): ResponseBody
+}
 
 interface Instance extends Request {
   create(options?: Options): Instance
@@ -240,6 +261,8 @@ interface Options extends RequestInit {
   prefixUrl?: string
   /** Request headers */
   headers?: Record<string, string>
+  /** Request headers (async getter) */
+  getHeaders?: () => Record<string, string> | Promise<Record<string, string>>
   /** Custom params serializer, default to `URLSearchParams` */
   serialize?(params: Record<string, any>): URLSearchParams | string
   /** Response handler, must handle status codes or throw `ResponseError` */
@@ -263,13 +286,15 @@ interface Options extends RequestInit {
 
 ```ts
 interface ResponseBody extends Promise<Response> {
-  json?<T>(): Promise<T>
-  text?(): Promise<string>
-  blob?(): Promise<Blob>
-  arrayBuffer?(): Promise<ArrayBuffer>
-  formData?(): Promise<FormData>
+  json<T>(): Promise<T>
+  text(): Promise<string>
+  blob(): Promise<Blob>
+  arrayBuffer(): Promise<ArrayBuffer>
+  formData(): Promise<FormData>
 }
 ```
+
+##
 
 ## 🔗 Alternatives
 
