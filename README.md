@@ -255,7 +255,7 @@ interface Options extends RequestInit {
   json?: unknown
   /** Object that can be passed to `serialize` */
   params?: Record<string, any>
-  /** Throw `TimeoutError`if timeout is passed */
+  /** Throw `TimeoutError` if timeout is passed */
   timeout?: number
   /** String that will prepended to `resource` in `fetch` instance */
   prefixUrl?: string

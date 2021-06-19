@@ -20,7 +20,7 @@ interface Options<T extends Payload> extends RequestInit {
   json?: T['json']
   /** Object that can be passed to `serialize` */
   params?: T['params']
-  /** Throw `TimeoutError`if timeout is passed */
+  /** Throw `TimeoutError` if timeout is passed */
   timeout?: number
   /** String that will prepended to `resource` in `fetch` instance */
   prefixUrl?: string
