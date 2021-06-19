@@ -199,13 +199,13 @@ function request<P extends Payload>(baseOptions: Options<P>): ResponseBody {
     setTimeout(() =>
       Promise.resolve()
         .then(opts.getHeaders)
-        .then((headers) => assign(opts.headers, headers))
-        .then(() =>
-          fetch(resource, opts)
-            .then((response) => opts.onResponse(response, opts))
-            .then(resolve, reject)
-            .then(() => clearTimeout(timerID))
-        )
+        .then((headers) => {
+          assign(opts.headers, headers)
+          return fetch(resource, opts)
+        })
+        .then((response) => opts.onResponse(response, opts))
+        .then(resolve, reject)
+        .then(() => clearTimeout(timerID))
     )
   })
     .then((response) => opts.onSuccess(response, opts))
