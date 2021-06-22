@@ -302,7 +302,13 @@ describe('Response', () => {
     const state = { token: 'none' }
     const api = YF.create({
       prefixUrl: 'https://example.com',
-      getHeaders: async () => {
+      headers: { 'x-static': 'static value' },
+      getHeaders: async (url, { method, headers }) => {
+        expect(url).toMatch(/example\.com\//)
+        expect(method).toBe('GET')
+        expect(headers).toHaveProperty('x-static', 'static value')
+        expect(headers).not.toHaveProperty('Authorization')
+        expect(headers).not.toHaveProperty('authorization')
         await new Promise((resolve) => setTimeout(resolve, 32))
         return { Authorization: `Bearer ${state.token}` }
       },
