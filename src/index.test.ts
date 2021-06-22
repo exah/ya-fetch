@@ -199,9 +199,7 @@ describe('Instance', () => {
 
 describe('Response', () => {
   test('request should return `Response` object by default', async () => {
-    const scope = nock('http://localhost')
-      .get('/comments')
-      .reply(200)
+    const scope = nock('http://localhost').get('/comments').reply(200)
 
     const result = await YF.get('http://localhost/comments')
 
@@ -438,9 +436,7 @@ describe('AbortController', () => {
 describe('Methods', () => {
   describe('GET', () => {
     test('should perform success get request', async () => {
-      const scope = nock('http://localhost')
-        .get('/comments')
-        .reply(200, 'ok')
+      const scope = nock('http://localhost').get('/comments').reply(200, 'ok')
 
       const result = await YF.get('http://localhost/comments').text()
 
@@ -451,9 +447,7 @@ describe('Methods', () => {
     test('should throw `ResponseError` on failed get request', async () => {
       expect.assertions(3)
 
-      const scope = nock('http://localhost')
-        .get('/comments')
-        .reply(400)
+      const scope = nock('http://localhost').get('/comments').reply(400)
 
       try {
         await YF.get('http://localhost/comments')
@@ -515,9 +509,7 @@ describe('Methods', () => {
     test('should throw `ResponseError` on failed post request', async () => {
       expect.assertions(3)
 
-      const scope = nock('http://localhost')
-        .post('/comments')
-        .reply(400)
+      const scope = nock('http://localhost').post('/comments').reply(400)
 
       try {
         await YF.post('http://localhost/comments')
@@ -579,9 +571,7 @@ describe('Methods', () => {
     test('should throw `ResponseError` on failed put request', async () => {
       expect.assertions(3)
 
-      const scope = nock('http://localhost')
-        .put('/comments')
-        .reply(400)
+      const scope = nock('http://localhost').put('/comments').reply(400)
 
       try {
         await YF.put('http://localhost/comments')
@@ -643,9 +633,7 @@ describe('Methods', () => {
     test('should throw `ResponseError` on failed patch request', async () => {
       expect.assertions(3)
 
-      const scope = nock('http://localhost')
-        .patch('/comments')
-        .reply(400)
+      const scope = nock('http://localhost').patch('/comments').reply(400)
 
       try {
         await YF.patch('http://localhost/comments')
@@ -674,9 +662,7 @@ describe('Methods', () => {
     test('should throw `ResponseError` on failed delete request', async () => {
       expect.assertions(3)
 
-      const scope = nock('http://localhost')
-        .delete('/comments/1')
-        .reply(400)
+      const scope = nock('http://localhost').delete('/comments/1').reply(400)
 
       try {
         await YF.delete('http://localhost/comments/1')
@@ -692,9 +678,7 @@ describe('Methods', () => {
 
   describe('HEAD', () => {
     test('should perform success head request', async () => {
-      const scope = nock('http://localhost')
-        .head('/comments/1')
-        .reply(200)
+      const scope = nock('http://localhost').head('/comments/1').reply(200)
 
       const response = await YF.head('http://localhost/comments/1')
 
@@ -705,9 +689,7 @@ describe('Methods', () => {
     test('should throw `ResponseError` on failed head request', async () => {
       expect.assertions(3)
 
-      const scope = nock('http://localhost')
-        .head('/comments/1')
-        .reply(400)
+      const scope = nock('http://localhost').head('/comments/1').reply(400)
 
       try {
         await YF.head('http://localhost/comments/1')
