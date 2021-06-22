@@ -1,0 +1,23 @@
+name: Test
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: yarn --frozen-lockfile
+
+      - name: Test
+        run: yarn test
+
+      - name: Lint
+        run: yarn lint
+      
+      - name: Build
+        run: yarn build
+
+      - name: Size Limit
+        run: yarn size
