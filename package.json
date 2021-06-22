@@ -57,6 +57,9 @@
   },
   "eslintConfig": {
     "parser": "@typescript-eslint/parser",
+    "parserOptions": {
+      "project": "./tsconfig.json"
+    },
     "globals": {
       "fetch": true,
       "FormData": true,
@@ -64,7 +67,7 @@
       "AbortController": true
     },
     "extends": [
-      "standard",
+      "standard-with-typescript",
       "prettier"
     ],
     "env": {
@@ -76,7 +79,16 @@
     ],
     "rules": {
       "prettier/prettier": 2,
-      "no-shadow": 2
+      "@typescript-eslint/consistent-type-definitions": 0,
+      "@typescript-eslint/explicit-function-return-type": 0,
+      "@typescript-eslint/method-signature-style": 0,
+      "@typescript-eslint/no-misused-promises": 0,
+      "@typescript-eslint/no-redeclare": 0,
+      "@typescript-eslint/prefer-reduce-type-parameter": 0,
+      "@typescript-eslint/prefer-ts-expect-error": 0,
+      "@typescript-eslint/promise-function-async": 0,
+      "@typescript-eslint/restrict-plus-operands": 0,
+      "@typescript-eslint/strict-boolean-expressions": 0
     }
   },
   "auto-changelog": {
@@ -96,30 +108,28 @@
     "@types/eslint": "^7.2.13",
     "@types/eslint-plugin-prettier": "^3.1.0",
     "@types/jest": "^26.0.23",
-    "@types/nock": "^11.1.0",
     "@types/node": "^15.12.4",
     "@types/prettier": "^2.3.0",
-    "@typescript-eslint/parser": "^4.27.0",
+    "@typescript-eslint/eslint-plugin": "^4.28.0",
+    "@typescript-eslint/parser": "^4.28.0",
     "abort-controller": "^3.0.0",
     "auto-changelog": "^2.3.0",
     "eslint": "^7.29.0",
     "eslint-config-prettier": "^8.3.0",
-    "eslint-config-standard": "^16.0.3",
     "eslint-config-standard-with-typescript": "^20.0.0",
     "eslint-plugin-import": "^2.23.4",
     "eslint-plugin-jest": "^24.3.6",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-prettier": "^3.4.0",
     "eslint-plugin-promise": "^5.1.0",
-    "eslint-plugin-standard": "^5.0.0",
     "form-data": "^4.0.0",
-    "jest": "^27.0.4",
+    "jest": "^27.0.5",
     "nock": "^13.1.0",
     "node-fetch": "^2.6.1",
     "np": "^7.5.0",
     "npm-run-all": "^4.1.5",
     "prettier": "^2.3.1",
-    "query-string": "^7.0.0",
+    "query-string": "^7.0.1",
     "size-limit": "^4.12.0",
     "ts-jest": "^27.0.3",
     "typescript": "^4.3.4"
