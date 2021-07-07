@@ -227,13 +227,15 @@ function create<P extends Payload>(baseOptions?: Options<P>): Instance<P> {
   const extend = <T extends P>(options: Options<T>) =>
     create<T>(mergeOptions(instance.options, options))
 
-  const createMethod = (method: RequestMethods) => <T extends P>(
-    resource: string,
-    options?: Omit<Options<T>, 'method' | 'resource'>
-  ) =>
-    request<P & T>(
-      mergeOptions(instance.options, merge({ resource, method }, options))
-    )
+  const createMethod =
+    (method: RequestMethods) =>
+    <T extends P>(
+      resource: string,
+      options?: Omit<Options<T>, 'method' | 'resource'>
+    ) =>
+      request<P & T>(
+        mergeOptions(instance.options, merge({ resource, method }, options))
+      )
 
   const instance = {
     create,
