@@ -27,7 +27,10 @@ interface Options<T extends Payload> extends RequestInit {
   /** Request headers */
   headers?: Headers
   /** Request headers (async getter) */
-  getHeaders?: () => Headers | Promise<Headers>
+  getHeaders?: (
+    resource: string,
+    init: RequestInit
+  ) => Headers | Promise<Headers>
   /** Custom params serializer, default to `URLSearchParams` */
   serialize?(params: Options<T>['params']): URLSearchParams | string
   /** Response handler, must handle status codes or throw `ResponseError` */
@@ -198,7 +201,7 @@ function request<P extends Payload>(baseOptions: Options<P>): ResponseBody {
     // Running fetch in next tick allow us to set headers after creating promise
     setTimeout(() =>
       Promise.resolve()
-        .then(opts.getHeaders)
+        .then(() => opts.getHeaders ? opts.getHeaders(resource, opts) : undefined)
         .then((headers) => {
           assign(opts.headers, headers)
           return fetch(resource, opts)
