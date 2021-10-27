@@ -4,7 +4,7 @@
 
 > Super light-weight wrapper around `fetch`
 
-- [x] Only 935 B when minified & gziped
+- [x] Only 942 B when minified & gziped
 - [x] Only native API (polyfills for `fetch`, `AbortController` required)
 - [x] TypeScript support
 - [x] Instance with custom defaults
@@ -114,7 +114,7 @@ import { getToken } from './async-state'
 
 const api = YF.create({
   prefixUrl: 'https://jsonplaceholder.typicode.com',
-  async getHeaders() {
+  async getHeaders(url, options) {
     return {
       Authorization: `Bearer ${await getToken()}`,
     }
@@ -225,6 +225,29 @@ api.get('/posts', { params: { userId: 1, tags: [1, 2] } })
 // https://jsonplaceholder.typicode.com/posts?userId=1&tags[]=1&tags[]=2
 ```
 
+### Node.js Support
+
+Install [`node-fetch`](https://github.com/node-fetch/node-fetch), [`form-data`](https://github.com/form-data/form-data), [`abort-controller`](https://github.com/mysticatea/abort-controller) packages and setup them as globally available variables.
+
+```sh
+yarn add node-fetch abort-controller form-data
+```
+
+```js
+import fetch, { Headers, Request, Response } from 'node-fetch'
+import AbortController from 'abort-controller'
+import FormData from 'form-data'
+
+global.fetch = fetch
+global.Headers = Headers
+global.Request = Request
+global.Response = Response
+global.AbortController = AbortController
+global.FormData = FormData
+```
+
+> ⚠️ Please, note `node-fetch` v2 may hang on large response when using `.clone()` or response type shortcuts (like `.json()`), because of smaller buffer size (16 kB). Use v3 instead and override default value of 10mb when needed with `highWaterMark` option.
+
 ## 📖 API
 
 ### Instance
@@ -261,8 +284,10 @@ interface Options extends RequestInit {
   prefixUrl?: string
   /** Request headers */
   headers?: Record<string, string>
-  /** Request headers (async getter) */
-  getHeaders?: () => Record<string, string> | Promise<Record<string, string>>
+  /**`node-fetch` v3 option, default is 10mb */
+  highWaterMark?: number
+  /** Request headers, can be async */
+  getHeaders?(resource: string, init: RequestInit): Headers | Promise<Headers>
   /** Custom params serializer, default to `URLSearchParams` */
   serialize?(params: Record<string, any>): URLSearchParams | string
   /** Response handler, must handle status codes or throw `ResponseError` */
@@ -293,8 +318,6 @@ interface ResponseBody extends Promise<Response> {
   formData(): Promise<FormData>
 }
 ```
-
-##
 
 ## 🔗 Alternatives
 

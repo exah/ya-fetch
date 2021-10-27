@@ -3,7 +3,11 @@ type ContentTypes = 'json' | 'text' | 'formData' | 'arrayBuffer' | 'blob'
 
 type Headers = Record<string, string>
 type Params = Record<string, any>
-type Payload = { json?: unknown; params?: Params }
+
+interface Payload {
+  json?: unknown
+  params?: Params
+}
 
 interface ResponseBody extends Promise<Response> {
   json<T>(): Promise<T>
@@ -26,11 +30,13 @@ interface Options<T extends Payload> extends RequestInit {
   prefixUrl?: string
   /** Request headers */
   headers?: Headers
-  /** Request headers (async getter) */
-  getHeaders?: (
-    resource: string,
-    init: RequestInit
-  ) => Headers | Promise<Headers>
+  /**
+   * `node-fetch` v3 option, default is 10mb
+   * @url https://github.com/exah/ya-fetch#node-js-support
+   */
+  highWaterMark?: number
+  /** Request headers, can be async */
+  getHeaders?(resource: string, init: RequestInit): Headers | Promise<Headers>
   /** Custom params serializer, default to `URLSearchParams` */
   serialize?(params: Options<T>['params']): URLSearchParams | string
   /** Response handler, must handle status codes or throw `ResponseError` */
@@ -38,7 +44,7 @@ interface Options<T extends Payload> extends RequestInit {
     response: Response,
     options: Options<T>
   ): Response | Promise<Response> | never | Promise<never>
-  /** Response handler with sucess status codes 200-299 */
+  /** Response handler with success status codes 200-299 */
   onSuccess?(
     response: Response,
     options: Options<T>
@@ -98,6 +104,7 @@ const ERROR_NAMES = {
 const DEFAULTS: Options<Payload> = {
   prefixUrl: '',
   credentials: 'same-origin',
+  highWaterMark: 1024 * 1024 * 10, // 10mb
   serialize(params: Record<string, any>) {
     return new URLSearchParams(params)
   },
@@ -174,7 +181,7 @@ function request<P extends Payload>(baseOptions: Options<P>): ResponseBody {
   }
 
   const promise = new Promise<Response>((resolve, reject) => {
-    let timerID: any
+    let timerID: ReturnType<typeof setTimeout>
 
     if (opts.timeout > 0) {
       if (typeof AbortController === 'function') {
@@ -201,7 +208,9 @@ function request<P extends Payload>(baseOptions: Options<P>): ResponseBody {
     // Running fetch in next tick allow us to set headers after creating promise
     setTimeout(() =>
       Promise.resolve()
-        .then(() => opts.getHeaders ? opts.getHeaders(resource, opts) : undefined)
+        .then(() =>
+          opts.getHeaders ? opts.getHeaders(resource, opts) : undefined
+        )
         .then((headers) => {
           assign(opts.headers, headers)
           return fetch(resource, opts)

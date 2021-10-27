@@ -5,6 +5,7 @@
     "lib": ["es2017", "es6", "dom"],
     "moduleResolution": "node",
     "strict": true,
+    "useUnknownInCatchVariables": false,
     "strictNullChecks": false,
     "esModuleInterop": true,
     "skipLibCheck": true
