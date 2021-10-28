@@ -294,10 +294,10 @@ interface Options extends RequestInit {
   onResponse?(
     response: Response,
     options: Options
-  ): Response | Promise<Response> | never | Promise<never>
+  ): Response | Promise<Response>
   /** Response handler with sucess status codes 200-299 */
   onSuccess?(response: Response, options: Options): Response | Promise<Response>
-  /** Error handler. Throw an `Error` for unhandled cases, throw custom errors, or return the new `Response` */
+  /** Error handler. Throw passed `error` for unhandled cases, throw custom errors, or return the new `Response` */
   onFailure?(
     error: ResponseError | AbortError | TimeoutError | TypeError | Error,
     options: Options

@@ -43,13 +43,13 @@ interface Options<T extends Payload> extends RequestInit {
   onResponse?(
     response: Response,
     options: Options<T>
-  ): Response | Promise<Response> | never | Promise<never>
+  ): Response | Promise<Response>
   /** Response handler with success status codes 200-299 */
   onSuccess?(
     response: Response,
     options: Options<T>
   ): Response | Promise<Response>
-  /** Error handler. Throw an `Error` for unhandled cases, throw custom errors, or return the new `Response` */
+  /** Error handler. Throw passed `error` for unhandled cases, throw custom errors, or return the new `Response` */
   onFailure?(
     error: ResponseError | AbortError | TimeoutError | TypeError | Error,
     options: Options<T>
