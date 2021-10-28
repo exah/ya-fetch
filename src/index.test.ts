@@ -192,7 +192,7 @@ describe('Instance', () => {
 
     const api = YF.create({
       prefixUrl: 'http://localhost',
-      onFailure: async (error, { onFailure: _, ...options }) => {
+      onFailure(error, { onFailure: _, ...options }) {
         if (isResponseError(error)) {
           if (error.response.status === 500) {
             return request(options)
