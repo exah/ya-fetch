@@ -1,6 +1,7 @@
 import nock from 'nock'
 import queryString from 'query-string'
 import YF, {
+  request,
   ResponseError,
   isTimeout,
   isResponseError,
@@ -171,6 +172,41 @@ describe('Instance', () => {
     } catch (error) {
       expect(error.message).toEqual('Foo Error')
     }
+
+    scope.done()
+  })
+
+  test('return new `Response` inside `onFailure`', async () => {
+    let count = 0
+    const scope = nock('http://localhost')
+      .persist()
+      .get('/comments')
+      .reply(() => {
+        if (count === 0) {
+          count++
+          return [500]
+        }
+
+        return [200, 'OK']
+      })
+
+    const api = YF.create({
+      prefixUrl: 'http://localhost',
+      onFailure: async (error, { onFailure: _, ...options }) => {
+        if (isResponseError(error)) {
+          if (error.response.status === 500) {
+            return request(options)
+          }
+        }
+
+        throw error
+      },
+    })
+
+    const result = await api('/comments').text()
+
+    expect(count).toBe(1)
+    expect(result).toBe('OK')
 
     scope.done()
   })
