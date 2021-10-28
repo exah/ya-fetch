@@ -49,11 +49,11 @@ interface Options<T extends Payload> extends RequestInit {
     response: Response,
     options: Options<T>
   ): Response | Promise<Response>
-  /** Error handler, must throw an `Error` or retry response with `request` */
+  /** Error handler. Throw an `Error` for unhandled cases, throw custom errors, or return the new `Response` */
   onFailure?(
     error: ResponseError | AbortError | TimeoutError | TypeError | Error,
     options: Options<T>
-  ): never | Promise<never> | Promise<Response>
+  ): Response | Promise<Response>
   /** Transform parsed JSON from response */
   onJSON?(input: unknown): unknown
 }
