@@ -10,7 +10,7 @@ type ContentTypes =
 interface UnknownHeaders extends Record<string, string> {}
 interface UnknownPayload {
   json?: unknown
-  params?: Record<string, unknown>
+  params?: Record<string, string | number | string[] | number[]>
 }
 
 export interface ResponseBody extends Promise<Response> {
@@ -41,10 +41,10 @@ export interface Options<Payload extends UnknownPayload> extends RequestInit {
    */
   highWaterMark?: number
   /** Request headers, can be async */
-  getHeaders?(
+  getOptions?(
     resource: string,
     init: RequestInit
-  ): UnknownHeaders | Promise<UnknownHeaders>
+  ): Promise<Options<Payload> | void> | Options<Payload> | void
   /** Custom params serializer, default to `URLSearchParams` */
   serialize?(params: Payload['params']): URLSearchParams | string
   /** Response handler, must handle status codes or throw `ResponseError` */
@@ -119,9 +119,8 @@ const DEFAULTS: Options<UnknownPayload> = {
   prefixUrl: '',
   credentials: 'same-origin',
   highWaterMark: 1024 * 1024 * 10, // 10mb
-  serialize(params: Record<string, any>) {
-    return new URLSearchParams(params)
-  },
+  serialize,
+  getOptions: () => {},
   onResponse(response) {
     if (response.ok) {
       return response
@@ -140,9 +139,8 @@ const DEFAULTS: Options<UnknownPayload> = {
   },
 }
 
-const { keys, assign } = Object
 const empty = {}
-const merge = <A, B>(a?: A, b?: B): A & B => assign({}, a, b)
+const merge = <A, B>(a?: A, b?: B): A & B => Object.assign({}, a, b)
 
 const mergeOptions = <A, B>(
   left: Options<A> = empty,
@@ -153,39 +151,48 @@ const mergeOptions = <A, B>(
     params: merge(left.params, right.params),
   })
 
-function ResponseError(
+export const ResponseError = (
   response: Response,
   message = response.statusText || String(response.status)
-): ResponseError {
-  return assign(new Error(message), {
+): ResponseError =>
+  Object.assign(new Error(message), {
     name: ERROR_NAMES.Response,
     response,
   })
-}
 
-function TimeoutError(): TimeoutError {
-  return assign(new Error('Request timed out'), {
+export const TimeoutError = (): TimeoutError =>
+  Object.assign(new Error('Request timed out'), {
     name: ERROR_NAMES.Timeout,
   })
+
+export const isResponseError = (error: Error): error is ResponseError =>
+  error.name === ERROR_NAMES.Response
+
+export const isAbortError = (error: Error): error is AbortError =>
+  error.name === ERROR_NAMES.Abort
+
+export const isTimeoutError = (error: Error): error is TimeoutError =>
+  error.name === ERROR_NAMES.Timeout
+
+export function serialize(input: UnknownPayload['params']): URLSearchParams {
+  const params = new URLSearchParams()
+
+  for (const [key, value] of Object.entries(input)) {
+    if (Array.isArray(value)) {
+      value.forEach((item) => params.append(key, String(item)))
+    } else {
+      params.set(key, String(value))
+    }
+  }
+
+  return params
 }
 
-function isResponseError(error: any): error is ResponseError {
-  return error.name === ERROR_NAMES.Response
-}
-
-function isAbortError(error: any): error is AbortError {
-  return error.name === ERROR_NAMES.Abort
-}
-
-function isTimeoutError(error: any): error is TimeoutError {
-  return error.name === ERROR_NAMES.Timeout
-}
-
-function request<Payload extends UnknownPayload>(
+export function request<Payload extends UnknownPayload>(
   baseOptions: Options<Payload>
 ): ResponseBody {
   const opts = mergeOptions(DEFAULTS, baseOptions)
-  const query = keys(opts.params).length
+  const query = Object.keys(opts.params).length
     ? '?' + opts.serialize(opts.params)
     : ''
 
@@ -200,37 +207,33 @@ function request<Payload extends UnknownPayload>(
     let timerID: ReturnType<typeof setTimeout>
 
     if (opts.timeout > 0) {
-      if (typeof AbortController === 'function') {
-        const controller = new AbortController()
+      const controller = new AbortController()
 
-        timerID = setTimeout(() => {
-          reject(TimeoutError())
+      timerID = setTimeout(() => {
+        reject(TimeoutError())
+        controller.abort()
+      }, opts.timeout)
+
+      if (opts.signal != null) {
+        opts.signal.addEventListener('abort', () => {
+          clearTimeout(timerID)
           controller.abort()
-        }, opts.timeout)
-
-        if (opts.signal != null) {
-          opts.signal.addEventListener('abort', () => {
-            clearTimeout(timerID)
-            controller.abort()
-          })
-        }
-
-        opts.signal = controller.signal
-      } else {
-        timerID = setTimeout(() => reject(TimeoutError()), opts.timeout)
+        })
       }
+
+      opts.signal = controller.signal
     }
 
     // Running fetch in next tick allow us to set headers after creating promise
     setTimeout(() =>
       Promise.resolve()
-        .then(() =>
-          opts.getHeaders ? opts.getHeaders(resource, opts) : undefined
+        .then(() => opts.getOptions(resource, opts))
+        .then((options) =>
+          fetch(
+            resource,
+            Object.assign(opts, options && mergeOptions(opts, options))
+          )
         )
-        .then((headers) => {
-          assign(opts.headers, headers)
-          return fetch(resource, opts)
-        })
         .then((response) => opts.onResponse(response, opts))
         .then(resolve, reject)
         .then(() => clearTimeout(timerID))
@@ -239,7 +242,7 @@ function request<Payload extends UnknownPayload>(
     .then((response) => opts.onSuccess(response, opts))
     .catch((error) => opts.onFailure(error, opts))
 
-  return (keys(CONTENT_TYPES) as ContentTypes[]).reduce((acc, key) => {
+  return (Object.keys(CONTENT_TYPES) as ContentTypes[]).reduce((acc, key) => {
     acc[key] = () => {
       opts.headers.accept = CONTENT_TYPES[key]
       return promise
@@ -279,19 +282,7 @@ function create<Payload extends UnknownPayload>(
     delete: createMethod('DELETE'),
   }
 
-  return assign(instance.get, instance)
-}
-
-export {
-  create,
-  request,
-  isAbortError,
-  isAbortError as isAborted, // COMPAT
-  isTimeoutError,
-  isTimeoutError as isTimeout, // COMPAT
-  isResponseError,
-  ResponseError,
-  TimeoutError,
+  return Object.assign(instance.get, instance)
 }
 
 export default create()

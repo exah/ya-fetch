@@ -3,10 +3,8 @@ import queryString from 'query-string'
 import YF, {
   request,
   ResponseError,
-  isTimeout,
   isResponseError,
   isTimeoutError,
-  isAborted,
   isAbortError,
 } from './index'
 
@@ -107,7 +105,7 @@ describe('Instance', () => {
     scope.done()
   })
 
-  test('should merge `params` from instance and tranform to query string', async () => {
+  test('should merge `params` from instance and transform to query string', async () => {
     const scope = nock('http://localhost')
       .get('/comments?userId=1&accessToken=1')
       .reply(200, 'ok')
@@ -311,7 +309,9 @@ describe('Response', () => {
     const state = { token: 'none' }
     const api = YF.create({
       prefixUrl: 'https://example.com',
-      getHeaders: () => ({ Authorization: `Bearer ${state.token}` }),
+      getOptions: () => ({
+        headers: { Authorization: `Bearer ${state.token}` },
+      }),
     })
 
     scope
@@ -337,14 +337,14 @@ describe('Response', () => {
     const api = YF.create({
       prefixUrl: 'https://example.com',
       headers: { 'x-static': 'static value' },
-      getHeaders: async (url, { method, headers }) => {
+      getOptions: async (url, { method, headers }) => {
         expect(url).toMatch(/example\.com\//)
         expect(method).toBe('GET')
         expect(headers).toHaveProperty('x-static', 'static value')
         expect(headers).not.toHaveProperty('Authorization')
         expect(headers).not.toHaveProperty('authorization')
         await new Promise((resolve) => setTimeout(resolve, 32))
-        return { Authorization: `Bearer ${state.token}` }
+        return { headers: { Authorization: `Bearer ${state.token}` } }
       },
     })
 
@@ -385,13 +385,13 @@ describe('Timeout', () => {
       await YF.get('http://localhost/comments', { timeout: 10 })
     } catch (error) {
       expect(error.name).toBe('TimeoutError')
-      expect(isTimeout(error)).toBe(true)
+      expect(isTimeoutError(error)).toBe(true)
     }
 
     scope.done()
   })
 
-  test('should fullfil if timeout is smaller than delay', async () => {
+  test('should resolve if timeout is smaller than delay', async () => {
     const scope = nock('http://localhost')
       .get('/comments')
       .delayConnection(10)
@@ -420,7 +420,7 @@ describe('AbortController', () => {
       })
     } catch (error) {
       expect(error.name).toBe('AbortError')
-      expect(isAborted(error)).toBe(true)
+      expect(isAbortError(error)).toBe(true)
     }
 
     scope.done()
@@ -444,7 +444,7 @@ describe('AbortController', () => {
       })
     } catch (error) {
       expect(error.name).toBe('AbortError')
-      expect(isAborted(error)).toBe(true)
+      expect(isAbortError(error)).toBe(true)
     }
 
     scope.done()
@@ -468,7 +468,7 @@ describe('AbortController', () => {
       })
     } catch (error) {
       expect(error.name).toBe('TimeoutError')
-      expect(isTimeout(error)).toBe(true)
+      expect(isTimeoutError(error)).toBe(true)
     }
 
     scope.done()
@@ -743,16 +743,6 @@ describe('Methods', () => {
 
       scope.done()
     })
-  })
-})
-
-describe('compatibility', () => {
-  test('renamed `isTimeout` should be same as `isTimeoutError`', () => {
-    expect(isTimeout).toBe(isTimeoutError)
-  })
-
-  test('renamed `isTimeout` should be same as `isTimeoutError`', () => {
-    expect(isAborted).toBe(isAbortError)
   })
 })
 
