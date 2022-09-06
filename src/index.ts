@@ -44,7 +44,7 @@ export interface Options<Payload extends UnknownPayload> extends RequestInit {
   getOptions?(
     resource: string,
     init: RequestInit
-  ): Promise<Options<Payload> | void> | Options<Payload> | void
+  ): Promise<Options<Payload>> | Options<Payload> | Promise<void> | void
   /** Custom params serializer, default to `URLSearchParams` */
   serialize?(params: Payload['params']): URLSearchParams | string
   /** Response handler, must handle status codes or throw `ResponseError` */
