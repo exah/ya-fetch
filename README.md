@@ -290,7 +290,10 @@ interface Options extends RequestInit {
   /**`node-fetch` v3 option, default is 10mb */
   highWaterMark?: number
   /** Request headers, can be async */
-  getHeaders?(resource: string, init: RequestInit): Headers | Promise<Headers>
+  getOptions?(
+    resource: string,
+    options: Options
+  ): Promise<Options> | Promise<void> | Options | void
   /** Custom params serializer, default to `URLSearchParams` */
   serialize?(params: Record<string, any>): URLSearchParams | string
   /** Response handler, must handle status codes or throw `ResponseError` */
