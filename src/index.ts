@@ -159,7 +159,7 @@ function ResponseError(
 ): ResponseError {
   return assign(new Error(message), {
     name: ERROR_NAMES.Response,
-    response: response,
+    response,
   })
 }
 
@@ -244,7 +244,7 @@ function request<Payload extends UnknownPayload>(
       opts.headers.accept = CONTENT_TYPES[key]
       return promise
         .then((response) => response.clone())
-        .then((response) => (key === 'void' ? void 0 : response[key]()))
+        .then((response) => (key === 'void' ? undefined : response[key]()))
         .then((parsed) => (key === 'json' ? opts.onJSON(parsed) : parsed))
     }
     return acc
