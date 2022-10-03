@@ -755,3 +755,16 @@ describe('compatibility', () => {
     expect(isAborted).toBe(isAbortError)
   })
 })
+
+describe('void', () => {
+  test('receive voided response', async () => {
+    const scope = nock('http://localhost')
+      .get('/comments')
+      .reply(200, [1, 2, 3, 4])
+
+    const result = await YF('http://localhost/comments').void()
+
+    expect(result).toEqual(undefined)
+    scope.done()
+  })
+})
