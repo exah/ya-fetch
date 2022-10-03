@@ -13,7 +13,7 @@ interface UnknownPayload {
   params?: Record<string, string | number | string[] | number[]>
 }
 
-export interface ResponseBody extends Promise<Response> {
+interface ResponseBody extends Promise<Response> {
   json<T>(): Promise<T>
   text(): Promise<string>
   blob(): Promise<Blob>
@@ -22,7 +22,7 @@ export interface ResponseBody extends Promise<Response> {
   void(): Promise<void>
 }
 
-export interface Options<Payload extends UnknownPayload> extends RequestInit {
+interface Options<Payload extends UnknownPayload> extends RequestInit {
   /** Resource URL */
   resource?: string
   /** Object that will be stringified with `JSON.stringify` */
@@ -66,12 +66,8 @@ export interface Options<Payload extends UnknownPayload> extends RequestInit {
   onJSON?(input: unknown): unknown
 }
 
-export interface Instance<Payload extends UnknownPayload> {
+interface Instance<Payload extends UnknownPayload> {
   (resource: string, options?: Options<Payload>): ResponseBody
-
-  create<Payload extends UnknownPayload>(
-    options?: Options<Payload>
-  ): Instance<Payload>
   extend<P extends Payload>(options?: Options<P>): Instance<P>
 
   get<P extends Payload>(resource: string, options?: Options<P>): ResponseBody
@@ -151,7 +147,7 @@ const mergeOptions = <A, B>(
     params: merge(left.params, right.params),
   })
 
-export const ResponseError = (
+const ResponseError = (
   response: Response,
   message = response.statusText || String(response.status)
 ): ResponseError =>
@@ -160,21 +156,21 @@ export const ResponseError = (
     response,
   })
 
-export const TimeoutError = (): TimeoutError =>
+const TimeoutError = (): TimeoutError =>
   Object.assign(new Error('Request timed out'), {
     name: ERROR_NAMES.Timeout,
   })
 
-export const isResponseError = (error: Error): error is ResponseError =>
+const isResponseError = (error: Error): error is ResponseError =>
   error.name === ERROR_NAMES.Response
 
-export const isAbortError = (error: Error): error is AbortError =>
+const isAbortError = (error: Error): error is AbortError =>
   error.name === ERROR_NAMES.Abort
 
-export const isTimeoutError = (error: Error): error is TimeoutError =>
+const isTimeoutError = (error: Error): error is TimeoutError =>
   error.name === ERROR_NAMES.Timeout
 
-export function serialize(input: UnknownPayload['params']): URLSearchParams {
+function serialize(input: UnknownPayload['params']): URLSearchParams {
   const params = new URLSearchParams()
 
   for (const [key, value] of Object.entries(input)) {
@@ -188,7 +184,7 @@ export function serialize(input: UnknownPayload['params']): URLSearchParams {
   return params
 }
 
-export function request<Payload extends UnknownPayload>(
+function request<Payload extends UnknownPayload>(
   baseOptions: Options<Payload>
 ): ResponseBody {
   const opts = mergeOptions(DEFAULTS, baseOptions)
@@ -271,7 +267,6 @@ function create<Payload extends UnknownPayload>(
       )
 
   const instance = {
-    create,
     extend,
     options: baseOptions,
     get: createMethod('GET'),
@@ -285,4 +280,35 @@ function create<Payload extends UnknownPayload>(
   return Object.assign(instance.get, instance)
 }
 
-export default create()
+const {
+  extend,
+  options,
+  get,
+  post,
+  put,
+  patch,
+  head,
+  delete: _delete,
+} = create()
+
+export {
+  ResponseBody,
+  Options,
+  Instance,
+  ResponseError,
+  TimeoutError,
+  isResponseError,
+  isAbortError,
+  isTimeoutError,
+  serialize,
+  request,
+  create,
+  extend,
+  options,
+  get,
+  post,
+  put,
+  patch,
+  head,
+  _delete as delete,
+}

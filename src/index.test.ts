@@ -1,12 +1,6 @@
 import nock from 'nock'
 import queryString from 'query-string'
-import YF, {
-  request,
-  ResponseError,
-  isResponseError,
-  isTimeoutError,
-  isAbortError,
-} from './index'
+import * as YF from './index'
 
 afterEach(() => nock.cleanAll())
 
@@ -15,7 +9,6 @@ describe('Instance', () => {
     const api = YF.create()
 
     expect(api).toBeInstanceOf(Function)
-    expect(api.create).toBeInstanceOf(Function)
     expect(api.extend).toBeInstanceOf(Function)
     expect(api.get).toBeInstanceOf(Function)
     expect(api.post).toBeInstanceOf(Function)
@@ -86,7 +79,7 @@ describe('Instance', () => {
       .get('/comments')
       .reply(200, [1, 2, 3, 4])
 
-    const result = await YF('http://localhost/comments').json()
+    const result = await YF.get('http://localhost/comments').json()
 
     expect(result).toEqual([1, 2, 3, 4])
     scope.done()
@@ -151,13 +144,13 @@ describe('Instance', () => {
     const api = YF.create({
       prefixUrl: 'http://localhost',
       onFailure: async (error, opts) => {
-        if (isResponseError(error)) {
+        if (YF.isResponseError(error)) {
           if (error.response.status === 403) {
             const parsed = (await error.response.json()) as {
               errorCode: ERRORS
             }
 
-            throw ResponseError(error.response, ERRORS[parsed.errorCode])
+            throw YF.ResponseError(error.response, ERRORS[parsed.errorCode])
           }
         }
 
@@ -191,9 +184,9 @@ describe('Instance', () => {
     const api = YF.create({
       prefixUrl: 'http://localhost',
       onFailure(error, { onFailure: _, ...options }) {
-        if (isResponseError(error)) {
+        if (YF.isResponseError(error)) {
           if (error.response.status === 500) {
-            return request(options)
+            return YF.request(options)
           }
         }
 
@@ -385,7 +378,7 @@ describe('Timeout', () => {
       await YF.get('http://localhost/comments', { timeout: 10 })
     } catch (error) {
       expect(error.name).toBe('TimeoutError')
-      expect(isTimeoutError(error)).toBe(true)
+      expect(YF.isTimeoutError(error)).toBe(true)
     }
 
     scope.done()
@@ -420,7 +413,7 @@ describe('AbortController', () => {
       })
     } catch (error) {
       expect(error.name).toBe('AbortError')
-      expect(isAbortError(error)).toBe(true)
+      expect(YF.isAbortError(error)).toBe(true)
     }
 
     scope.done()
@@ -444,7 +437,7 @@ describe('AbortController', () => {
       })
     } catch (error) {
       expect(error.name).toBe('AbortError')
-      expect(isAbortError(error)).toBe(true)
+      expect(YF.isAbortError(error)).toBe(true)
     }
 
     scope.done()
@@ -468,7 +461,7 @@ describe('AbortController', () => {
       })
     } catch (error) {
       expect(error.name).toBe('TimeoutError')
-      expect(isTimeoutError(error)).toBe(true)
+      expect(YF.isTimeoutError(error)).toBe(true)
     }
 
     scope.done()
@@ -752,7 +745,7 @@ describe('void', () => {
       .get('/comments')
       .reply(200, [1, 2, 3, 4])
 
-    const result = await YF('http://localhost/comments').void()
+    const result = await YF.get('http://localhost/comments').void()
 
     expect(result).toEqual(undefined)
     scope.done()
