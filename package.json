@@ -6,9 +6,13 @@
   "license": "MIT",
   "repository": "exah/ya-fetch",
   "sideEffects": false,
-  "main": "cjs/index.js",
-  "module": "esm/index.js",
-  "types": "types/index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./types/index.d.ts",
+      "import": "./esm/index.js"
+    }
+  },
   "files": [
     "cjs",
     "esm",
@@ -33,7 +37,6 @@
   "scripts": {
     "build": "run-s build:*",
     "build:esm": "tsc -p tsconfig.esm.json",
-    "build:cjs": "tsc -p tsconfig.cjs.json",
     "build:types": "tsc -p tsconfig.types.json",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
     "lint": "eslint --ext ts --ext js src/",
@@ -45,10 +48,6 @@
   "size-limit": [
     {
       "path": "./esm/index.js",
-      "limit": "1.5Kb"
-    },
-    {
-      "path": "./cjs/index.js",
       "limit": "1.5Kb"
     }
   ],

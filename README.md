@@ -4,7 +4,7 @@
 
 > Super light-weight wrapper around `fetch`
 
-- [x] Only 959 B when minified & gziped
+- [x] Only 955 B when minified & gziped
 - [x] Only native API (polyfills for `fetch`, `AbortController` required)
 - [x] TypeScript support
 - [x] Instance with custom defaults
