@@ -22,7 +22,7 @@ $ yarn add ya-fetch
 ```
 
 ```js
-import YF from 'ya-fetch'
+import * as YF from 'ya-fetch'
 
 // inside an aync function
 const result = await YF.patch('http://example.com/posts', {
@@ -40,7 +40,7 @@ console.log(result)
 
 ```js
 // api.js
-import YF from 'ya-fetch'
+import * as YF from 'ya-fetch'
 
 const api = YF.create({
   prefixUrl: 'https://jsonplaceholder.typicode.com',
@@ -109,7 +109,7 @@ You can use an async or regular function to return headers for request dynamical
 
 ```js
 // api.js
-import YF from 'ya-fetch'
+import * as YF from 'ya-fetch'
 import { getToken } from './async-state'
 
 const api = YF.create({
@@ -211,7 +211,7 @@ export function usePosts() {
 By default parsed & stringified with [URLSearchParams](https://developer.mozilla.org/en-US/docs/Web/API/URLsearchParams).
 
 ```js
-import YF from 'ya-fetch'
+import * as YF from 'ya-fetch'
 import queryString from 'query-string'
 
 const api = YF.create({
