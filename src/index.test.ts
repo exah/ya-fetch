@@ -744,3 +744,19 @@ describe('void', () => {
     scope.done()
   })
 })
+
+test('serialize', () => {
+  const result = YF.serialize({
+    number: 0,
+    string: 'text',
+    array: [1, 'two', 3],
+  }).toString()
+
+  expect(result).toBe('number=0&string=text&array=1&array=two&array=3')
+
+  const params = new URLSearchParams(result)
+
+  expect(params.getAll('number')).toEqual(['0'])
+  expect(params.getAll('string')).toEqual(['text'])
+  expect(params.getAll('array')).toEqual(['1', 'two', '3'])
+})
