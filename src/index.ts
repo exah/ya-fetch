@@ -59,7 +59,7 @@ interface Options<Payload extends UnknownPayload> extends RequestInit {
   ): Response | Promise<Response>
   /** Error handler. Throw passed `error` for unhandled cases, throw custom errors, or return the new `Response` */
   onFailure?(
-    error: ResponseError | AbortError | TimeoutError | TypeError | Error,
+    error: ResponseError | TimeoutError | TypeError | Error,
     options: Options<Payload>
   ): Response | Promise<Response>
   /** Transform parsed JSON from response */
@@ -83,19 +83,6 @@ interface Instance<Payload extends UnknownPayload> {
   options: Options<Payload>
 }
 
-type ResponseError = Error & {
-  name: 'ResponseError'
-  response: Response
-}
-
-type TimeoutError = Error & {
-  name: 'TimeoutError'
-}
-
-type AbortError = Error & {
-  name: 'AbortError'
-}
-
 const CONTENT_TYPES: Record<ContentTypes, string | undefined> = {
   json: 'application/json',
   text: 'text/*',
@@ -104,12 +91,6 @@ const CONTENT_TYPES: Record<ContentTypes, string | undefined> = {
   blob: '*/*',
   void: undefined,
 }
-
-const ERROR_NAMES = {
-  Response: 'ResponseError',
-  Timeout: 'TimeoutError',
-  Abort: 'AbortError',
-} as const
 
 const DEFAULTS: Options<UnknownPayload> = {
   prefixUrl: '',
@@ -122,7 +103,7 @@ const DEFAULTS: Options<UnknownPayload> = {
       return response
     }
 
-    throw ResponseError(response)
+    throw new ResponseError(response)
   },
   onSuccess(response) {
     return response
@@ -147,28 +128,27 @@ const mergeOptions = <A, B>(
     params: merge(left.params, right.params),
   })
 
-const ResponseError = (
-  response: Response,
-  message = response.statusText || String(response.status)
-): ResponseError =>
-  Object.assign(new Error(message), {
-    name: ERROR_NAMES.Response,
-    response,
-  })
+class ResponseError extends Error {
+  name = 'ResponseError'
+  response: Response
 
-const TimeoutError = (): TimeoutError =>
-  Object.assign(new Error('Request timed out'), {
-    name: ERROR_NAMES.Timeout,
-  })
+  constructor(
+    response: Response,
+    message = response.statusText || String(response.status)
+  ) {
+    super(message)
+    this.response = response
+  }
+}
 
-const isResponseError = (error: Error): error is ResponseError =>
-  error.name === ERROR_NAMES.Response
+class TimeoutError extends Error {
+  name = 'TimeoutError'
+  response: Response
 
-const isAbortError = (error: Error): error is AbortError =>
-  error.name === ERROR_NAMES.Abort
-
-const isTimeoutError = (error: Error): error is TimeoutError =>
-  error.name === ERROR_NAMES.Timeout
+  constructor() {
+    super('Request timed out')
+  }
+}
 
 function serialize(input: UnknownPayload['params']): URLSearchParams {
   const params = new URLSearchParams()
@@ -206,7 +186,7 @@ function request<Payload extends UnknownPayload>(
       const controller = new AbortController()
 
       timerID = setTimeout(() => {
-        reject(TimeoutError())
+        reject(new TimeoutError())
         controller.abort()
       }, opts.timeout)
 
@@ -297,9 +277,6 @@ export {
   Instance,
   ResponseError,
   TimeoutError,
-  isResponseError,
-  isAbortError,
-  isTimeoutError,
   serialize,
   request,
   create,

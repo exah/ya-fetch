@@ -4,7 +4,7 @@
 
 > Super light-weight wrapper around `fetch`
 
-- [x] Only 1.01 kB when minified & gziped
+- [x] Only 990 B when minified & gziped
 - [x] Only native API (polyfills for `fetch`, `AbortController` required)
 - [x] TypeScript support
 - [x] Instance with custom defaults
@@ -129,7 +129,7 @@ export default api
 Cancel request if it is not fulfilled in period of time.
 
 ```js
-import { isTimeoutError } from 'ya-fetch'
+import { TimeoutError } from 'ya-fetch'
 import api from './api'
 
 api
@@ -137,7 +137,7 @@ api
   .json()
   .then((posts) => console.log(posts))
   .catch((error) => {
-    if (isTimeoutError(error)) {
+    if (error instanceof TimeoutError) {
       // do something
     }
   })
@@ -179,7 +179,6 @@ fetch('http://example.com/posts', {
 > This feature may require polyfill for [`AbortController`](https://developer.mozilla.org/en-US/docs/Web/API/AbortController.html) and `fetch`.
 
 ```js
-import { isAbortError } from 'ya-fetch'
 import { useEffect, useState } from 'react'
 import api from './api'
 
@@ -194,7 +193,7 @@ export function usePosts() {
       .json()
       .then((data) => setPosts(data))
       .catch((error) => {
-        if (isAbortError(error)) {
+        if (error.name === 'AbortError') {
           // do something
         }
       })

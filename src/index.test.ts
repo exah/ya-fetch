@@ -144,13 +144,13 @@ describe('Instance', () => {
     const api = YF.create({
       prefixUrl: 'http://localhost',
       onFailure: async (error, opts) => {
-        if (YF.isResponseError(error)) {
+        if (error instanceof YF.ResponseError) {
           if (error.response.status === 403) {
             const parsed = (await error.response.json()) as {
               errorCode: ERRORS
             }
 
-            throw YF.ResponseError(error.response, ERRORS[parsed.errorCode])
+            throw new YF.ResponseError(error.response, ERRORS[parsed.errorCode])
           }
         }
 
@@ -184,7 +184,7 @@ describe('Instance', () => {
     const api = YF.create({
       prefixUrl: 'http://localhost',
       onFailure(error, { onFailure: _, ...options }) {
-        if (YF.isResponseError(error)) {
+        if (error instanceof YF.ResponseError) {
           if (error.response.status === 500) {
             return YF.request(options)
           }
@@ -367,7 +367,7 @@ describe('Response', () => {
 
 describe('Timeout', () => {
   test('should throw if timeout is passed', async () => {
-    expect.assertions(2)
+    expect.assertions(1)
 
     const scope = nock('http://localhost')
       .get('/comments')
@@ -377,8 +377,7 @@ describe('Timeout', () => {
     try {
       await YF.get('http://localhost/comments', { timeout: 10 })
     } catch (error) {
-      expect(error.name).toBe('TimeoutError')
-      expect(YF.isTimeoutError(error)).toBe(true)
+      expect(error).toBeInstanceOf(YF.TimeoutError)
     }
 
     scope.done()
@@ -397,7 +396,7 @@ describe('Timeout', () => {
 
 describe('AbortController', () => {
   test('AbortController should cancel request', async () => {
-    expect.assertions(2)
+    expect.assertions(1)
 
     const controller = new AbortController()
 
@@ -413,14 +412,13 @@ describe('AbortController', () => {
       })
     } catch (error) {
       expect(error.name).toBe('AbortError')
-      expect(YF.isAbortError(error)).toBe(true)
     }
 
     scope.done()
   })
 
   test('AbortController should cancel request with timeout', async () => {
-    expect.assertions(2)
+    expect.assertions(1)
 
     const controller = new AbortController()
 
@@ -437,14 +435,13 @@ describe('AbortController', () => {
       })
     } catch (error) {
       expect(error.name).toBe('AbortError')
-      expect(YF.isAbortError(error)).toBe(true)
     }
 
     scope.done()
   })
 
   test('AbortController should cancel request before timeout', async () => {
-    expect.assertions(2)
+    expect.assertions(1)
 
     const controller = new AbortController()
 
@@ -460,8 +457,7 @@ describe('AbortController', () => {
         timeout: 5,
       })
     } catch (error) {
-      expect(error.name).toBe('TimeoutError')
-      expect(YF.isTimeoutError(error)).toBe(true)
+      expect(error).toBeInstanceOf(YF.TimeoutError)
     }
 
     scope.done()
