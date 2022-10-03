@@ -10,7 +10,7 @@ type ContentTypes =
 export interface Headers extends Record<string, string> {}
 export interface Payload {
   json?: unknown
-  params?: Record<string, unknown>
+  params?: Record<string, any>
 }
 
 export interface ResponseBody extends Promise<Response> {
@@ -111,7 +111,7 @@ const DEFAULTS: Options<Payload> = {
   prefixUrl: '',
   credentials: 'same-origin',
   highWaterMark: 1024 * 1024 * 10, // 10mb
-  serialize(params: Record<string, any>) {
+  serialize(params: Payload['params']) {
     return new URLSearchParams(params)
   },
   onResponse(response) {
