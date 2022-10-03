@@ -91,6 +91,13 @@
       "@typescript-eslint/strict-boolean-expressions": 0
     }
   },
+  "prettier": {
+    "arrowParens": "always",
+    "singleQuote": true,
+    "semi": false,
+    "trailingComma": "es5",
+    "printWidth": 80
+  },
   "auto-changelog": {
     "unreleased": true,
     "commitLimit": false,
