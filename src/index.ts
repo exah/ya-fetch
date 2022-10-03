@@ -1,5 +1,11 @@
 type RequestMethods = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'HEAD' | 'DELETE'
-type ContentTypes = 'json' | 'text' | 'formData' | 'arrayBuffer' | 'blob'
+type ContentTypes =
+  | 'json'
+  | 'text'
+  | 'formData'
+  | 'arrayBuffer'
+  | 'blob'
+  | 'void'
 
 interface UnknownHeaders extends Record<string, string> {}
 interface UnknownPayload {
@@ -13,6 +19,7 @@ export interface ResponseBody extends Promise<Response> {
   blob(): Promise<Blob>
   arrayBuffer(): Promise<ArrayBuffer>
   formData(): Promise<FormData>
+  void(): Promise<void>
 }
 
 export interface Options<Payload extends UnknownPayload> extends RequestInit {
@@ -93,13 +100,14 @@ type AbortError = Error & {
   name: 'AbortError'
 }
 
-const CONTENT_TYPES = {
+const CONTENT_TYPES: Record<ContentTypes, string | undefined> = {
   json: 'application/json',
   text: 'text/*',
   formData: 'multipart/form-data',
   arrayBuffer: '*/*',
   blob: '*/*',
-} as const
+  void: undefined,
+}
 
 const ERROR_NAMES = {
   Response: 'ResponseError',
@@ -236,7 +244,7 @@ function request<Payload extends UnknownPayload>(
       opts.headers.accept = CONTENT_TYPES[key]
       return promise
         .then((response) => response.clone())
-        .then((response) => response[key]())
+        .then((response) => (key === 'void' ? void 0 : response[key]()))
         .then((parsed) => (key === 'json' ? opts.onJSON(parsed) : parsed))
     }
     return acc
