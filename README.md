@@ -4,7 +4,7 @@
 
 > Super light-weight wrapper around `fetch`
 
-- [x] Only 990 B when minified & gziped
+- [x] Only 959 B when minified & gziped
 - [x] Only native API (polyfills for `fetch`, `AbortController` required)
 - [x] TypeScript support
 - [x] Instance with custom defaults
@@ -105,7 +105,7 @@ fetch('http://example.com/posts', {
 
 ### Instance with dynamic headers
 
-You can use an async or regular function to return headers for request dynamically.
+You can use an async or regular function to return options for request dynamically.
 
 ```js
 // api.js
@@ -114,9 +114,13 @@ import { getToken } from './async-state'
 
 const api = YF.create({
   prefixUrl: 'https://jsonplaceholder.typicode.com',
-  async getHeaders(url, options) {
+  async getOptions(url, options) {
+    const token = await getToken()
+
     return {
-      Authorization: `Bearer ${await getToken()}`,
+      headers: {
+        Authorization: `Bearer ${await getToken()}`,
+      },
     }
   },
 })

@@ -8,7 +8,6 @@ describe('Instance', () => {
   test('should create new instance', () => {
     const api = YF.create()
 
-    expect(api).toBeInstanceOf(Function)
     expect(api.extend).toBeInstanceOf(Function)
     expect(api.get).toBeInstanceOf(Function)
     expect(api.post).toBeInstanceOf(Function)
@@ -16,8 +15,6 @@ describe('Instance', () => {
     expect(api.patch).toBeInstanceOf(Function)
     expect(api.delete).toBeInstanceOf(Function)
     expect(api.head).toBeInstanceOf(Function)
-
-    expect(api).toEqual(api.get)
     expect(api.options).toBeUndefined()
   })
 
@@ -126,7 +123,7 @@ describe('Instance', () => {
       onJSON: (parsed: { data: Comments }) => parsed.data,
     })
 
-    const result = await api('/comments').json<Comments>()
+    const result = await api.get('/comments').json<Comments>()
 
     expect(result).toEqual([1, 2, 3, 4])
     scope.done()
@@ -159,7 +156,7 @@ describe('Instance', () => {
     })
 
     try {
-      await api('/comments')
+      await api.get('/comments')
     } catch (error) {
       expect(error.message).toEqual('Foo Error')
     }
@@ -194,7 +191,7 @@ describe('Instance', () => {
       },
     })
 
-    const result = await api('/comments').text()
+    const result = await api.get('/comments').text()
 
     expect(count).toBe(1)
     expect(result).toBe('OK')

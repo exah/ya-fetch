@@ -68,8 +68,6 @@ interface Options<P extends Payload> extends RequestInit {
 }
 
 interface Instance<P extends Payload> {
-  (resource: string, options?: Options<P>): Methods
-
   extend<T extends P>(options?: Options<T>): Instance<T>
 
   get<T extends P>(resource: string, options?: Options<T>): Methods
@@ -115,16 +113,13 @@ const DEFAULTS: Options<Payload> = {
   },
 }
 
-const empty = {}
-const merge = <A, B>(a?: A, b?: B): A & B => Object.assign({}, a, b)
-
-const mergeOptions = <A, B>(
-  left: Options<A> = empty,
-  right: Options<B> = empty
-) =>
-  merge(merge(left, right), {
-    headers: merge(left.headers, right.headers),
-    params: merge(left.params, right.params),
+const merge = <A, B>(
+  left: Options<A> = {},
+  right: Options<B> = {}
+): Options<A> & Options<B> =>
+  Object.assign({}, left, right, {
+    headers: Object.assign({}, left.headers, right.headers),
+    params: Object.assign({}, left.params, right.params),
   })
 
 class ResponseError extends Error {
@@ -164,7 +159,7 @@ function serialize(input: Payload['params']): URLSearchParams {
 }
 
 function request<P extends Payload>(baseOptions: Options<P>): Methods {
-  const opts = mergeOptions(DEFAULTS, baseOptions)
+  const opts = merge(DEFAULTS, baseOptions)
   const query = Object.keys(opts.params).length
     ? '?' + opts.serialize(opts.params)
     : ''
@@ -201,12 +196,7 @@ function request<P extends Payload>(baseOptions: Options<P>): Methods {
     setTimeout(() =>
       Promise.resolve()
         .then(() => opts.getOptions(resource, opts))
-        .then((options) =>
-          fetch(
-            resource,
-            Object.assign(opts, options && mergeOptions(opts, options))
-          )
-        )
+        .then((options) => fetch(resource, merge(opts, options as undefined)))
         .then((response) => opts.onResponse(response, opts))
         .then(resolve, reject)
         .then(() => clearTimeout(timerID))
@@ -228,20 +218,20 @@ function request<P extends Payload>(baseOptions: Options<P>): Methods {
 }
 
 function create<P extends Payload>(baseOptions?: Options<P>): Instance<P> {
-  const extend = <T extends P>(options: Options<T>) =>
-    create<T>(mergeOptions(instance.options, options))
+  const extend = <T extends P>(nextOptions: Options<T>) =>
+    create<T>(merge(baseOptions, nextOptions))
 
   const createMethod =
     (method: RequestMethods) =>
     <T extends P>(
       resource: string,
-      options?: Omit<Options<T>, 'method' | 'resource'>
+      nextOptions?: Omit<Options<T>, 'method' | 'resource'>
     ) =>
       request<P & T>(
-        mergeOptions(instance.options, merge({ resource, method }, options))
+        merge(baseOptions, merge({ resource, method }, nextOptions))
       )
 
-  const instance = {
+  return {
     extend,
     options: baseOptions,
     get: createMethod('GET'),
@@ -251,8 +241,6 @@ function create<P extends Payload>(baseOptions?: Options<P>): Instance<P> {
     head: createMethod('HEAD'),
     delete: createMethod('DELETE'),
   }
-
-  return Object.assign(instance.get, instance)
 }
 
 const {
