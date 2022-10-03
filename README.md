@@ -256,20 +256,15 @@ global.FormData = FormData
 ### Instance
 
 ```ts
-interface Request {
-  (resource: string, options?: Options): ResponseBody
-}
-
 interface Instance extends Request {
-  create(options?: Options): Instance
-  extend(options?: Options): Instance
-  options: Options
   get: Request
   post: Request
   put: Request
   patch: Request
   head: Request
   delete: Request
+  options: Options
+  extend(options?: Options): Instance
 }
 ```
 

@@ -25,14 +25,14 @@ interface Methods extends Promise<Response> {
 
 interface Options<P extends Payload> extends RequestInit {
   /** Resource URL */
-  resource?: string
+  url?: string
   /** Object that will be stringified with `JSON.stringify` */
   json?: P['json']
   /** Object that can be passed to `serialize` */
   params?: P['params']
   /** Throw `TimeoutError` if timeout is passed */
   timeout?: number
-  /** String that will prepended to `resource` in `fetch` instance */
+  /** String that will prepended to `url` in `fetch` instance */
   prefixUrl?: string
   /** Request headers */
   headers?: Headers
@@ -41,10 +41,10 @@ interface Options<P extends Payload> extends RequestInit {
    * @url https://github.com/exah/ya-fetch#node-js-support
    */
   highWaterMark?: number
-  /** Request headers, can be async */
+  /** Request options, can be async */
   getOptions?(
-    resource: string,
-    init: RequestInit
+    url: string,
+    options: Options<P>
   ): Promise<Options<P>> | Options<P> | Promise<void> | void
   /** Custom params serializer, default to `URLSearchParams` */
   serialize?(params: P['params']): URLSearchParams | string
@@ -70,12 +70,12 @@ interface Options<P extends Payload> extends RequestInit {
 interface Instance<P extends Payload> {
   extend<T extends P>(options?: Options<T>): Instance<T>
 
-  get<T extends P>(resource: string, options?: Options<T>): Methods
-  post<T extends P>(resource: string, options?: Options<T>): Methods
-  put<T extends P>(resource: string, options?: Options<T>): Methods
-  patch<T extends P>(resource: string, options?: Options<T>): Methods
-  head<T extends P>(resource: string, options?: Options<T>): Methods
-  delete<T extends P>(resource: string, options?: Options<T>): Methods
+  get<T extends P>(url: string, options?: Options<T>): Methods
+  post<T extends P>(url: string, options?: Options<T>): Methods
+  put<T extends P>(url: string, options?: Options<T>): Methods
+  patch<T extends P>(url: string, options?: Options<T>): Methods
+  head<T extends P>(url: string, options?: Options<T>): Methods
+  delete<T extends P>(url: string, options?: Options<T>): Methods
 
   options: Options<P>
 }
@@ -164,7 +164,7 @@ function request<P extends Payload>(baseOptions: Options<P>): Methods {
     ? '?' + opts.serialize(opts.params)
     : ''
 
-  const resource = opts.prefixUrl + opts.resource + query
+  const url = opts.prefixUrl + opts.url + query
 
   if (opts.json != null) {
     opts.body = JSON.stringify(opts.json)
@@ -195,8 +195,8 @@ function request<P extends Payload>(baseOptions: Options<P>): Methods {
     // Running fetch in next tick allow us to set headers after creating promise
     setTimeout(() =>
       Promise.resolve()
-        .then(() => opts.getOptions(resource, opts))
-        .then((options) => fetch(resource, merge(opts, options as undefined)))
+        .then(() => opts.getOptions(url, opts))
+        .then((options) => fetch(url, merge(opts, options as undefined)))
         .then((response) => opts.onResponse(response, opts))
         .then(resolve, reject)
         .then(() => clearTimeout(timerID))
@@ -224,12 +224,10 @@ function create<P extends Payload>(baseOptions?: Options<P>): Instance<P> {
   const createMethod =
     (method: RequestMethods) =>
     <T extends P>(
-      resource: string,
-      nextOptions?: Omit<Options<T>, 'method' | 'resource'>
+      url: string,
+      nextOptions?: Omit<Options<T>, 'method' | 'url'>
     ) =>
-      request<P & T>(
-        merge(baseOptions, merge({ resource, method }, nextOptions))
-      )
+      request<P & T>(merge(baseOptions, merge({ url, method }, nextOptions)))
 
   return {
     extend,
