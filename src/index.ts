@@ -1,15 +1,13 @@
 type RequestMethods = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'HEAD' | 'DELETE'
 type ContentTypes = 'json' | 'text' | 'formData' | 'arrayBuffer' | 'blob'
 
-type Headers = Record<string, string>
-type Params = Record<string, any>
-
-interface Payload {
+interface UnknownHeaders extends Record<string, string> {}
+interface UnknownPayload {
   json?: unknown
-  params?: Params
+  params?: Record<string, unknown>
 }
 
-interface ResponseBody extends Promise<Response> {
+export interface ResponseBody extends Promise<Response> {
   json<T>(): Promise<T>
   text(): Promise<string>
   blob(): Promise<Blob>
@@ -17,61 +15,69 @@ interface ResponseBody extends Promise<Response> {
   formData(): Promise<FormData>
 }
 
-interface Options<T extends Payload> extends RequestInit {
+export interface Options<Payload extends UnknownPayload> extends RequestInit {
   /** Resource URL */
   resource?: string
   /** Object that will be stringified with `JSON.stringify` */
-  json?: T['json']
+  json?: Payload['json']
   /** Object that can be passed to `serialize` */
-  params?: T['params']
+  params?: Payload['params']
   /** Throw `TimeoutError` if timeout is passed */
   timeout?: number
   /** String that will prepended to `resource` in `fetch` instance */
   prefixUrl?: string
   /** Request headers */
-  headers?: Headers
+  headers?: UnknownHeaders
   /**
    * `node-fetch` v3 option, default is 10mb
    * @url https://github.com/exah/ya-fetch#node-js-support
    */
   highWaterMark?: number
   /** Request headers, can be async */
-  getHeaders?(resource: string, init: RequestInit): Headers | Promise<Headers>
+  getHeaders?(
+    resource: string,
+    init: RequestInit
+  ): UnknownHeaders | Promise<UnknownHeaders>
   /** Custom params serializer, default to `URLSearchParams` */
-  serialize?(params: Options<T>['params']): URLSearchParams | string
+  serialize?(params: Payload['params']): URLSearchParams | string
   /** Response handler, must handle status codes or throw `ResponseError` */
   onResponse?(
     response: Response,
-    options: Options<T>
+    options: Options<Payload>
   ): Response | Promise<Response>
   /** Response handler with success status codes 200-299 */
   onSuccess?(
     response: Response,
-    options: Options<T>
+    options: Options<Payload>
   ): Response | Promise<Response>
   /** Error handler. Throw passed `error` for unhandled cases, throw custom errors, or return the new `Response` */
   onFailure?(
     error: ResponseError | AbortError | TimeoutError | TypeError | Error,
-    options: Options<T>
+    options: Options<Payload>
   ): Response | Promise<Response>
   /** Transform parsed JSON from response */
   onJSON?(input: unknown): unknown
 }
 
-interface Instance<P extends Payload> {
-  (resource: string, options?: Options<P>): ResponseBody
+export interface Instance<Payload extends UnknownPayload> {
+  (resource: string, options?: Options<Payload>): ResponseBody
 
-  create<T extends Payload>(options?: Options<T>): Instance<T>
-  extend<T extends P>(options?: Options<T>): Instance<P & T>
+  create<Payload extends UnknownPayload>(
+    options?: Options<Payload>
+  ): Instance<Payload>
+  extend<P extends Payload>(options?: Options<P>): Instance<P>
 
-  get<T extends P>(resource: string, options?: Options<T>): ResponseBody
-  post<T extends P>(resource: string, options?: Options<T>): ResponseBody
-  put<T extends P>(resource: string, options?: Options<T>): ResponseBody
-  patch<T extends P>(resource: string, options?: Options<T>): ResponseBody
-  head<T extends P>(resource: string, options?: Options<T>): ResponseBody
-  delete<T extends P>(resource: string, options?: Options<T>): ResponseBody
+  get<P extends Payload>(resource: string, options?: Options<P>): ResponseBody
+  post<P extends Payload>(resource: string, options?: Options<P>): ResponseBody
+  put<P extends Payload>(resource: string, options?: Options<P>): ResponseBody
+  patch<P extends Payload>(resource: string, options?: Options<P>): ResponseBody
+  head<P extends Payload>(resource: string, options?: Options<P>): ResponseBody
+  delete<P extends Payload>(
+    resource: string,
+    options?: Options<P>
+  ): ResponseBody
 
-  options: Options<P>
+  options: Options<Payload>
 }
 
 type ResponseError = Error & {
@@ -101,7 +107,7 @@ const ERROR_NAMES = {
   Abort: 'AbortError',
 } as const
 
-const DEFAULTS: Options<Payload> = {
+const DEFAULTS: Options<UnknownPayload> = {
   prefixUrl: '',
   credentials: 'same-origin',
   highWaterMark: 1024 * 1024 * 10, // 10mb
@@ -167,7 +173,9 @@ function isTimeoutError(error: any): error is TimeoutError {
   return error.name === ERROR_NAMES.Timeout
 }
 
-function request<P extends Payload>(baseOptions: Options<P>): ResponseBody {
+function request<Payload extends UnknownPayload>(
+  baseOptions: Options<Payload>
+): ResponseBody {
   const opts = mergeOptions(DEFAULTS, baseOptions)
   const query = keys(opts.params).length
     ? '?' + opts.serialize(opts.params)
@@ -235,17 +243,19 @@ function request<P extends Payload>(baseOptions: Options<P>): ResponseBody {
   }, promise as ResponseBody)
 }
 
-function create<P extends Payload>(baseOptions?: Options<P>): Instance<P> {
-  const extend = <T extends P>(options: Options<T>) =>
+function create<Payload extends UnknownPayload>(
+  baseOptions?: Options<Payload>
+): Instance<Payload> {
+  const extend = <T extends Payload>(options: Options<T>) =>
     create<T>(mergeOptions(instance.options, options))
 
   const createMethod =
     (method: RequestMethods) =>
-    <T extends P>(
+    <T extends Payload>(
       resource: string,
       options?: Omit<Options<T>, 'method' | 'resource'>
     ) =>
-      request<P & T>(
+      request<Payload & T>(
         mergeOptions(instance.options, merge({ resource, method }, options))
       )
 
