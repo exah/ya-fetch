@@ -13,6 +13,7 @@
 - [x] First class JSON support
 - [x] Search params
 - [x] Timeouts
+- [x] Pure ESM module
 - [x] Zero deps
 
 ## 📦 Install

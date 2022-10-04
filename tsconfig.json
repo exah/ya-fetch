@@ -3,7 +3,7 @@
     "rootDir": "./src",
     "target": "es6",
     "lib": ["es2017", "es6", "dom"],
-    "moduleResolution": "node",
+    "moduleResolution": "Node16",
     "strict": true,
     "useUnknownInCatchVariables": false,
     "strictNullChecks": false,

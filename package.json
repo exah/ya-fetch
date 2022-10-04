@@ -14,7 +14,6 @@
     }
   },
   "files": [
-    "cjs",
     "esm",
     "types"
   ],
@@ -48,7 +47,7 @@
   "size-limit": [
     {
       "path": "./esm/index.js",
-      "limit": "1.5Kb"
+      "limit": "1Kb"
     }
   ],
   "publishConfig": {
