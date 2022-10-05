@@ -88,7 +88,7 @@ const CONTENT_TYPES: Record<ContentTypes, string | undefined> = {
   formData: 'multipart/form-data',
   arrayBuffer: '*/*',
   blob: '*/*',
-  void: undefined,
+  void: '*/*',
 }
 
 const DEFAULTS: Options<Payload> = {
