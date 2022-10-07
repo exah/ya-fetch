@@ -1,11 +1,5 @@
 type RequestMethods = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'HEAD' | 'DELETE'
-type ContentTypes =
-  | 'json'
-  | 'text'
-  | 'formData'
-  | 'arrayBuffer'
-  | 'blob'
-  | 'void'
+type ContentTypes = keyof typeof CONTENT_TYPES
 
 interface Headers extends Record<string, string> {}
 interface SearchParams
