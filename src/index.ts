@@ -8,12 +8,12 @@ type ContentTypes =
   | 'void'
 
 interface Headers extends Record<string, string> {}
-interface Params
+interface SearchParams
   extends Record<string, string | number | Array<string | number>> {}
 
 interface Payload {
   json?: unknown
-  params?: Params
+  params?: SearchParams
 }
 
 interface Result<P extends Payload = Payload> extends Response {
@@ -144,7 +144,7 @@ class TimeoutError extends Error {
   }
 }
 
-function serialize(input: Params): URLSearchParams {
+function serialize(input: SearchParams): URLSearchParams {
   const params = new URLSearchParams()
 
   for (const key of Object.keys(input)) {
@@ -254,7 +254,8 @@ export {
   Methods,
   Options,
   Instance,
-  Result,
+  SearchParams,
+  Result as Response,
   ResponseError,
   TimeoutError,
   serialize,
