@@ -30,6 +30,7 @@ interface Methods<P extends Payload = Payload> extends Promise<Result<P>> {
 }
 
 interface StrictOptions<P extends Payload> extends RequestInit {
+  url: string
   /** Resource URL or path if `prefixUrl` option is used */
   resource: string
   /** Object that will be stringified with `JSON.stringify` */
@@ -49,7 +50,6 @@ interface StrictOptions<P extends Payload> extends RequestInit {
   highWaterMark?: number
   /** Request options, can be async */
   getOptions(
-    url: string,
     options: StrictOptions<P>
   ): Promise<Options<P> | undefined> | Options<P> | undefined
   /** Custom params serializer, default to `URLSearchParams` */
@@ -90,6 +90,7 @@ const CONTENT_TYPES = {
 } as const
 
 const DEFAULTS: StrictOptions<{}> = {
+  url: '',
   prefixUrl: '',
   resource: '',
   params: {},
@@ -98,7 +99,6 @@ const DEFAULTS: StrictOptions<{}> = {
   timeout: 0,
   highWaterMark: 1024 * 1024 * 10, // 10mb
   serialize,
-  getOptions: () => undefined,
   onResponse(result) {
     if (result.ok) {
       return result
@@ -106,14 +106,11 @@ const DEFAULTS: StrictOptions<{}> = {
 
     throw new ResponseError(result)
   },
-  onSuccess(result) {
-    return result
-  },
+  onJSON: (json) => json,
+  getOptions: () => undefined,
+  onSuccess: (result) => result,
   onFailure(error) {
     throw error
-  },
-  onJSON(json) {
-    return json
   },
 }
 
@@ -150,7 +147,8 @@ class TimeoutError extends Error {
 function serialize(input: Params): URLSearchParams {
   const params = new URLSearchParams()
 
-  for (const [key, value] of Object.entries(input)) {
+  for (const key of Object.keys(input)) {
+    const value = input[key]
     if (Array.isArray(value)) {
       value.forEach((item) => params.append(key, String(item)))
     } else {
@@ -167,7 +165,7 @@ function request<P extends Payload>(baseOptions: Options<P>): Methods<P> {
     ? '?' + opts.serialize(opts.params)
     : ''
 
-  const url = opts.prefixUrl + opts.resource + query
+  opts.url = opts.prefixUrl + opts.resource + query
 
   if (opts.json != null) {
     opts.body = JSON.stringify(opts.json)
@@ -197,9 +195,9 @@ function request<P extends Payload>(baseOptions: Options<P>): Methods<P> {
 
     // Running fetch in next tick allow us to set headers after creating promise
     setTimeout(() =>
-      Promise.resolve(opts.getOptions(url, opts))
+      Promise.resolve(opts.getOptions(opts))
         .then((options) => merge(opts, options))
-        .then((options) => Promise.all([fetch(url, options), options]))
+        .then((options) => Promise.all([fetch(opts.url, options), options]))
         .then(([response, options]) =>
           opts.onResponse(Object.assign(response, { options }))
         )
@@ -230,7 +228,7 @@ function create<P extends Payload>(baseOptions: Options<P> = {}): Instance<P> {
     (method: RequestMethods) =>
     <T extends P>(
       resource: string,
-      nextOptions?: Omit<Options<T>, 'method' | 'url'>
+      nextOptions?: Omit<Options<T>, 'method' | 'resource'>
     ) =>
       request<P & T>(
         merge(baseOptions, merge({ resource, method }, nextOptions))

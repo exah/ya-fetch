@@ -333,7 +333,7 @@ describe('Response', () => {
     const api = YF.create({
       prefixUrl: 'https://example.com',
       headers: { 'x-static': 'static value' },
-      getOptions: async (url, { method, headers }) => {
+      getOptions: async ({ url, method, headers }) => {
         expect(url).toMatch(/example\.com\//)
         expect(method).toBe('GET')
         expect(headers).toHaveProperty('x-static', 'static value')
