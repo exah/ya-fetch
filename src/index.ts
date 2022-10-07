@@ -16,7 +16,11 @@ interface Payload {
   params?: Params
 }
 
-interface Methods extends Promise<Response> {
+interface Result<P extends Payload = Payload> extends Response {
+  options: StrictOptions<P>
+}
+
+interface Methods<P extends Payload = Payload> extends Promise<Result<P>> {
   json<T>(): Promise<T>
   text(): Promise<string>
   blob(): Promise<Blob>
@@ -25,87 +29,85 @@ interface Methods extends Promise<Response> {
   void(): Promise<void>
 }
 
-interface Options<P extends Payload> extends RequestInit {
-  /** Resource URL */
-  url?: string
+interface StrictOptions<P extends Payload> extends RequestInit {
+  /** Resource URL or path if `prefixUrl` option is used */
+  resource: string
   /** Object that will be stringified with `JSON.stringify` */
   json?: P['json']
   /** Object that can be passed to `serialize` */
-  params?: P['params']
+  params: Exclude<P['params'], undefined>
   /** Throw `TimeoutError` if timeout is passed */
-  timeout?: number
+  timeout: number
   /** String that will prepended to `url` in `fetch` instance */
-  prefixUrl?: string
+  prefixUrl: string
   /** Request headers */
-  headers?: Headers
+  headers: Headers
   /**
    * `node-fetch` v3 option, default is 10mb
    * @url https://github.com/exah/ya-fetch#node-js-support
    */
   highWaterMark?: number
   /** Request options, can be async */
-  getOptions?(
+  getOptions(
     url: string,
-    options: Options<P>
-  ): Promise<Options<P>> | Options<P> | Promise<void> | void
+    options: StrictOptions<P>
+  ): Promise<Options<P> | undefined> | Options<P> | undefined
   /** Custom params serializer, default to `URLSearchParams` */
-  serialize?(params: P['params']): URLSearchParams | string
+  serialize(params: P['params']): URLSearchParams | string | undefined
   /** Response handler, must handle status codes or throw `ResponseError` */
-  onResponse?(
-    response: Response,
-    options: Options<P>
-  ): Response | Promise<Response>
+  onResponse(response: Result<P>): Result<P> | Promise<Result<P>>
   /** Response handler with success status codes 200-299 */
-  onSuccess?(
-    response: Response,
-    options: Options<P>
-  ): Response | Promise<Response>
+  onSuccess(response: Result<P>): Result<P> | Promise<Result<P>>
   /** Error handler. Throw passed `error` for unhandled cases, throw custom errors, or return the new `Response` */
-  onFailure?(
-    error: ResponseError | TimeoutError | TypeError | Error,
-    options: Options<P>
-  ): Response | Promise<Response>
+  onFailure(
+    error: ResponseError<P> | TimeoutError | TypeError | Error
+  ): Result<P> | Promise<Result<P>>
   /** Transform parsed JSON from response */
-  onJSON?(input: unknown): unknown
+  onJSON(input: unknown): unknown
 }
+
+interface Options<P extends Payload> extends Partial<StrictOptions<P>> {}
 
 interface Instance<P extends Payload> {
+  options: Options<P>
   extend<T extends P>(options?: Options<T>): Instance<T>
 
-  get<T extends P>(url: string, options?: Options<T>): Methods
-  post<T extends P>(url: string, options?: Options<T>): Methods
-  put<T extends P>(url: string, options?: Options<T>): Methods
-  patch<T extends P>(url: string, options?: Options<T>): Methods
-  head<T extends P>(url: string, options?: Options<T>): Methods
-  delete<T extends P>(url: string, options?: Options<T>): Methods
-
-  options: Options<P>
+  get<T extends P>(url: string, options?: Options<T>): Methods<T>
+  post<T extends P>(url: string, options?: Options<T>): Methods<T>
+  put<T extends P>(url: string, options?: Options<T>): Methods<T>
+  patch<T extends P>(url: string, options?: Options<T>): Methods<T>
+  head<T extends P>(url: string, options?: Options<T>): Methods<T>
+  delete<T extends P>(url: string, options?: Options<T>): Methods<T>
 }
 
-const CONTENT_TYPES: Record<ContentTypes, string | undefined> = {
+const CONTENT_TYPES = {
   json: 'application/json',
   text: 'text/*',
   formData: 'multipart/form-data',
   arrayBuffer: '*/*',
   blob: '*/*',
   void: '*/*',
-}
+} as const
 
-const DEFAULTS: Options<Payload> = {
+const DEFAULTS: StrictOptions<{}> = {
   prefixUrl: '',
+  resource: '',
+  params: {},
+  headers: {},
   credentials: 'same-origin',
+  timeout: 0,
   highWaterMark: 1024 * 1024 * 10, // 10mb
   serialize,
-  getOptions: () => {},
-  onResponse(response) {
-    if (response.ok) {
-      return response
+  getOptions: () => undefined,
+  onResponse(result) {
+    if (result.ok) {
+      return result
     }
 
-    throw new ResponseError(response)
+    throw new ResponseError(result)
   },
-  onSuccess(response) {
-    return response
+  onSuccess(result) {
+    return result
   },
   onFailure(error) {
     throw error
@@ -115,21 +117,21 @@ const DEFAULTS: Options<Payload> = {
   },
 }
 
-const merge = <A, B>(
-  left: Options<A> = {},
-  right: Options<B> = {}
-): Options<A> & Options<B> =>
+const merge = <A extends Options<Payload>, B extends Options<Payload>>(
+  left: A,
+  right: Partial<B> = {}
+) =>
   Object.assign({}, left, right, {
     headers: Object.assign({}, left.headers, right.headers),
     params: Object.assign({}, left.params, right.params),
   })
 
-class ResponseError extends Error {
+class ResponseError<P extends Payload> extends Error {
   name = 'ResponseError'
-  response: Response
+  response: Result<P>
 
   constructor(
-    response: Response,
+    response: Result<P>,
     message = response.statusText || String(response.status)
   ) {
     super(message)
@@ -139,7 +141,6 @@ class ResponseError extends Error {
 
 class TimeoutError extends Error {
   name = 'TimeoutError'
-  response: Response
 
   constructor() {
     super('Request timed out')
@@ -160,20 +161,20 @@ function serialize(input: Params): URLSearchParams {
   return params
 }
 
-function request<P extends Payload>(baseOptions: Options<P>): Methods {
-  const opts = merge(DEFAULTS, baseOptions)
+function request<P extends Payload>(baseOptions: Options<P>): Methods<P> {
+  const opts = merge(DEFAULTS as StrictOptions<P>, baseOptions)
   const query = Object.keys(opts.params).length
     ? '?' + opts.serialize(opts.params)
     : ''
 
-  const url = opts.prefixUrl + opts.url + query
+  const url = opts.prefixUrl + opts.resource + query
 
   if (opts.json != null) {
     opts.body = JSON.stringify(opts.json)
     opts.headers['content-type'] = CONTENT_TYPES.json
   }
 
-  const promise = new Promise<Response>((resolve, reject) => {
+  const promise = new Promise<Result<P>>((resolve, reject) => {
     let timerID: ReturnType<typeof setTimeout>
 
     if (opts.timeout > 0) {
@@ -196,16 +197,18 @@ function request<P extends Payload>(baseOptions: Options<P>): Methods {
 
     // Running fetch in next tick allow us to set headers after creating promise
     setTimeout(() =>
-      Promise.resolve()
-        .then(() => opts.getOptions(url, opts))
-        .then((options) => fetch(url, merge(opts, options as undefined)))
-        .then((response) => opts.onResponse(response, opts))
+      Promise.resolve(opts.getOptions(url, opts))
+        .then((options) => merge(opts, options))
+        .then((options) => Promise.all([fetch(url, options), options]))
+        .then(([response, options]) =>
+          opts.onResponse(Object.assign(response, { options }))
+        )
         .then(resolve, reject)
-        .then(() => clearTimeout(timerID))
+        .finally(() => clearTimeout(timerID))
     )
   })
-    .then((response) => opts.onSuccess(response, opts))
-    .catch((error) => opts.onFailure(error, opts))
+    .then(opts.onSuccess)
+    .catch(opts.onFailure)
 
   return (Object.keys(CONTENT_TYPES) as ContentTypes[]).reduce((acc, key) => {
     acc[key] = () => {
@@ -216,24 +219,26 @@ function request<P extends Payload>(baseOptions: Options<P>): Methods {
         .then((parsed) => (key === 'json' ? opts.onJSON(parsed) : parsed))
     }
     return acc
-  }, promise as Methods)
+  }, promise as Methods<P>)
 }
 
-function create<P extends Payload>(baseOptions?: Options<P>): Instance<P> {
+function create<P extends Payload>(baseOptions: Options<P> = {}): Instance<P> {
   const extend = <T extends P>(nextOptions: Options<T>) =>
-    create<T>(merge(baseOptions, nextOptions))
+    create<P & T>(merge(baseOptions, nextOptions))
 
   const createMethod =
     (method: RequestMethods) =>
     <T extends P>(
-      url: string,
+      resource: string,
       nextOptions?: Omit<Options<T>, 'method' | 'url'>
     ) =>
-      request<P & T>(merge(baseOptions, merge({ url, method }, nextOptions)))
+      request<P & T>(
+        merge(baseOptions, merge({ resource, method }, nextOptions))
+      )
 
   return {
-    extend,
     options: baseOptions,
+    extend,
     get: createMethod('GET'),
     post: createMethod('POST'),
     put: createMethod('PUT'),
@@ -243,16 +248,7 @@ function create<P extends Payload>(baseOptions?: Options<P>): Instance<P> {
   }
 }
 
-const {
-  extend,
-  options,
-  get,
-  post,
-  put,
-  patch,
-  head,
-  delete: _delete,
-} = create()
+const { extend, get, post, put, patch, head, delete: _delete } = create()
 
 export {
   Headers,
@@ -266,7 +262,6 @@ export {
   request,
   create,
   extend,
-  options,
   get,
   post,
   put,

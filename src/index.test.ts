@@ -16,7 +16,7 @@ describe('Instance', () => {
     expect(api.patch).toBeInstanceOf(Function)
     expect(api.delete).toBeInstanceOf(Function)
     expect(api.head).toBeInstanceOf(Function)
-    expect(api.options).toBeUndefined()
+    expect(api.options).toEqual({})
   })
 
   test('should prepend prefixUrl with create options', async () => {
@@ -42,7 +42,7 @@ describe('Instance', () => {
     })
 
     expect(extended.options.prefixUrl).toBe('http://localhost')
-    expect(extended.options.headers.Authorization).toBe('Bearer ::Token::')
+    expect(extended.options.headers?.Authorization).toBe('Bearer ::Token::')
 
     const scope = nock('http://localhost')
       .matchHeader('Authorization', 'Bearer ::Token::')
@@ -141,7 +141,7 @@ describe('Instance', () => {
 
     const api = YF.create({
       prefixUrl: 'http://localhost',
-      onFailure: async (error, opts) => {
+      onFailure: async (error) => {
         if (error instanceof YF.ResponseError) {
           if (error.response.status === 403) {
             const parsed = (await error.response.json()) as {
@@ -159,7 +159,9 @@ describe('Instance', () => {
     try {
       await api.get('/comments')
     } catch (error) {
-      expect(error.message).toEqual('Foo Error')
+      if (error instanceof Error) {
+        expect(error.message).toEqual('Foo Error')
+      }
     }
 
     scope.done()
@@ -181,10 +183,10 @@ describe('Instance', () => {
 
     const api = YF.create({
       prefixUrl: 'http://localhost',
-      onFailure(error, { onFailure: _, ...options }) {
+      onFailure(error) {
         if (error instanceof YF.ResponseError) {
           if (error.response.status === 500) {
-            return YF.request(options)
+            return YF.request(error.response.options)
           }
         }
 
@@ -209,7 +211,9 @@ describe('Instance', () => {
       prefixUrl: 'http://localhost',
       params: { accessToken: '1' },
       serialize(params) {
-        return queryString.stringify(params, { arrayFormat: 'bracket' })
+        if (params) {
+          return queryString.stringify(params, { arrayFormat: 'bracket' })
+        }
       },
     })
 
@@ -288,7 +292,6 @@ describe('Response', () => {
 
     const result = await YF.get('http://localhost/blob').blob()
 
-    // @ts-ignore
     expect(await result.text()).toBe('test')
     expect(result.size).toBe(4)
     expect(result.type).toBeDefined()
@@ -300,9 +303,11 @@ describe('Response', () => {
     const state = { token: 'none' }
     const api = YF.create({
       prefixUrl: 'https://example.com',
-      getOptions: () => ({
-        headers: { Authorization: `Bearer ${state.token}` },
-      }),
+      getOptions: () => {
+        return {
+          headers: { Authorization: `Bearer ${state.token}` },
+        }
+      },
     })
 
     scope
@@ -409,7 +414,9 @@ describe('AbortController', () => {
         signal: controller.signal,
       })
     } catch (error) {
-      expect(error.name).toBe('AbortError')
+      if (error instanceof Error) {
+        expect(error.name).toBe('AbortError')
+      }
     }
 
     scope.done()
@@ -432,7 +439,9 @@ describe('AbortController', () => {
         timeout: 15,
       })
     } catch (error) {
-      expect(error.name).toBe('AbortError')
+      if (error instanceof Error) {
+        expect(error.name).toBe('AbortError')
+      }
     }
 
     scope.done()
@@ -481,9 +490,11 @@ describe('Methods', () => {
       try {
         await YF.get('http://localhost/comments')
       } catch (error) {
-        expect(error.name).toBe('ResponseError')
-        expect(error.response).toBeInstanceOf(Response)
-        expect(error.response.status).toBe(400)
+        if (error instanceof YF.ResponseError) {
+          expect(error.name).toBe('ResponseError')
+          expect(error.response).toBeInstanceOf(Response)
+          expect(error.response.status).toBe(400)
+        }
       }
 
       scope.done()
@@ -543,9 +554,11 @@ describe('Methods', () => {
       try {
         await YF.post('http://localhost/comments')
       } catch (error) {
-        expect(error.name).toBe('ResponseError')
-        expect(error.response).toBeInstanceOf(Response)
-        expect(error.response.status).toBe(400)
+        if (error instanceof YF.ResponseError) {
+          expect(error.name).toBe('ResponseError')
+          expect(error.response).toBeInstanceOf(Response)
+          expect(error.response.status).toBe(400)
+        }
       }
 
       scope.done()
@@ -605,9 +618,11 @@ describe('Methods', () => {
       try {
         await YF.put('http://localhost/comments')
       } catch (error) {
-        expect(error.name).toBe('ResponseError')
-        expect(error.response).toBeInstanceOf(Response)
-        expect(error.response.status).toBe(400)
+        if (error instanceof YF.ResponseError) {
+          expect(error.name).toBe('ResponseError')
+          expect(error.response).toBeInstanceOf(Response)
+          expect(error.response.status).toBe(400)
+        }
       }
 
       scope.done()
@@ -667,9 +682,11 @@ describe('Methods', () => {
       try {
         await YF.patch('http://localhost/comments')
       } catch (error) {
-        expect(error.name).toBe('ResponseError')
-        expect(error.response).toBeInstanceOf(Response)
-        expect(error.response.status).toBe(400)
+        if (error instanceof YF.ResponseError) {
+          expect(error.name).toBe('ResponseError')
+          expect(error.response).toBeInstanceOf(Response)
+          expect(error.response.status).toBe(400)
+        }
       }
 
       scope.done()
@@ -696,9 +713,11 @@ describe('Methods', () => {
       try {
         await YF.delete('http://localhost/comments/1')
       } catch (error) {
-        expect(error.name).toBe('ResponseError')
-        expect(error.response).toBeInstanceOf(Response)
-        expect(error.response.status).toBe(400)
+        if (error instanceof YF.ResponseError) {
+          expect(error.name).toBe('ResponseError')
+          expect(error.response).toBeInstanceOf(Response)
+          expect(error.response.status).toBe(400)
+        }
       }
 
       scope.done()
@@ -723,9 +742,11 @@ describe('Methods', () => {
       try {
         await YF.head('http://localhost/comments/1')
       } catch (error) {
-        expect(error.name).toBe('ResponseError')
-        expect(error.response).toBeInstanceOf(Response)
-        expect(error.response.status).toBe(400)
+        if (error instanceof YF.ResponseError) {
+          expect(error.name).toBe('ResponseError')
+          expect(error.response).toBeInstanceOf(Response)
+          expect(error.response.status).toBe(400)
+        }
       }
 
       scope.done()
