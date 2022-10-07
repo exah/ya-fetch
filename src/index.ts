@@ -254,6 +254,7 @@ export {
   Methods,
   Options,
   Instance,
+  Result,
   ResponseError,
   TimeoutError,
   serialize,
