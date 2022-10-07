@@ -6,7 +6,7 @@
 
 - [x] Only 1 kB when minified & gziped
 - [x] Only native API (polyfills for `fetch`, `AbortController` required)
-- [x] TypeScript support
+- [x] Strictly typed with TS
 - [x] Instance with custom defaults
 - [x] Methods shortcuts
 - [x] Response type shortcuts
