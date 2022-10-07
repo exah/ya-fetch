@@ -247,11 +247,8 @@ describe('Instance', () => {
     const api = YF.create({
       prefixUrl: 'http://localhost',
       params: { accessToken: '1' },
-      serialize(params) {
-        if (params) {
-          return queryString.stringify(params, { arrayFormat: 'bracket' })
-        }
-      },
+      serialize: (params) =>
+        queryString.stringify(params, { arrayFormat: 'bracket' }),
     })
 
     const result = await api

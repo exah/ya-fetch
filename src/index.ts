@@ -47,7 +47,9 @@ interface StrictOptions<P extends Payload> extends RequestInit {
     options: StrictOptions<P>
   ): Promise<Options<P> | undefined> | Options<P> | undefined
   /** Custom params serializer, default to `URLSearchParams` */
-  serialize(params: P['params']): URLSearchParams | string | undefined
+  serialize(
+    params: Exclude<P['params'], undefined>
+  ): URLSearchParams | string | undefined
   /** Response handler, must handle status codes or throw `ResponseError` */
   onResponse(response: Result<P>): Result<P> | Promise<Result<P>>
   /** Response handler with success status codes 200-299 */
