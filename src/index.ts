@@ -36,13 +36,13 @@ interface StrictOptions<P extends Payload> extends RequestInit {
   /** Object that will be stringified with `JSON.stringify` */
   json?: P['json']
   /** Object that can be passed to `serialize` */
-  params: Exclude<P['params'], undefined>
+  params?: Exclude<P['params'], undefined>
   /** Throw `TimeoutError` if timeout is passed */
   timeout: number
   /** String that will prepended to `url` in `fetch` instance */
   prefixUrl: string
   /** Request headers */
-  headers: Headers
+  headers?: Headers
   /**
    * `node-fetch` v3 option, default is 10mb
    * @url https://github.com/exah/ya-fetch#node-js-support
@@ -57,9 +57,9 @@ interface StrictOptions<P extends Payload> extends RequestInit {
   /** Response handler, must handle status codes or throw `ResponseError` */
   onResponse(response: Result<P>): Result<P> | Promise<Result<P>>
   /** Response handler with success status codes 200-299 */
-  onSuccess(response: Result<P>): Result<P> | Promise<Result<P>>
+  onSuccess?(response: Result<P>): Result<P> | Promise<Result<P>>
   /** Error handler. Throw passed `error` for unhandled cases, throw custom errors, or return the new `Response` */
-  onFailure(
+  onFailure?(
     error: ResponseError<P> | TimeoutError | TypeError | Error
   ): Result<P> | Promise<Result<P>>
   /** Transform parsed JSON from response */
@@ -89,12 +89,10 @@ const CONTENT_TYPES = {
   void: '*/*',
 } as const
 
-const DEFAULTS: StrictOptions<{}> = {
+const DEFAULTS: StrictOptions<Payload> = {
   url: '',
   prefixUrl: '',
   resource: '',
-  params: {},
-  headers: {},
   credentials: 'same-origin',
   timeout: 0,
   highWaterMark: 1024 * 1024 * 10, // 10mb
@@ -108,10 +106,6 @@ const DEFAULTS: StrictOptions<{}> = {
   },
   onJSON: (json) => json,
   getOptions: () => undefined,
-  onSuccess: (result) => result,
-  onFailure(error) {
-    throw error
-  },
 }
 
 const merge = <A extends Options<Payload>, B extends Options<Payload>>(
