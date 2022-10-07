@@ -1,8 +1,10 @@
 {
   "extends": "./tsconfig",
   "compilerOptions": {
+    "rootDir": "./src",
     "outDir": "./esm",
     "module": "Node16"
   },
-  "exclude": ["node_modules", "src/**/*.test.ts"]
+  "include": ["src/*.ts"],
+  "exclude": ["node_modules", "**/*.test.ts"]
 }

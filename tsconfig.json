@@ -1,15 +1,12 @@
 {
   "compilerOptions": {
-    "rootDir": "./src",
     "target": "es6",
     "lib": ["es2017", "es6", "dom"],
     "moduleResolution": "Node16",
     "strict": true,
-    "useUnknownInCatchVariables": false,
-    "strictNullChecks": false,
+    "strictNullChecks": true,
     "esModuleInterop": true,
     "skipLibCheck": true
   },
-  "exclude": ["node_modules"],
-  "include": ["./src"]
+  "exclude": ["node_modules"]
 }

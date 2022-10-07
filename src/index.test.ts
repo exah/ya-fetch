@@ -1,6 +1,7 @@
+import { afterEach, describe, test, expect } from 'vitest'
 import nock from 'nock'
 import queryString from 'query-string'
-import * as YF from './index'
+import * as YF from './index.js'
 
 afterEach(() => nock.cleanAll())
 
