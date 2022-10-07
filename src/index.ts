@@ -159,7 +159,7 @@ function serialize(input: SearchParams): URLSearchParams {
   return params
 }
 
-function request<P extends Payload>(baseOptions: Options<P>): Methods<P> {
+function request<P extends Payload>(baseOptions?: Options<P>): Methods<P> {
   const opts = merge(DEFAULTS as StrictOptions<P>, baseOptions)
   const query = Object.keys(opts.params).length
     ? '?' + opts.serialize(opts.params)
@@ -202,7 +202,7 @@ function request<P extends Payload>(baseOptions: Options<P>): Methods<P> {
           opts.onResponse(Object.assign(response, { options }))
         )
         .then(resolve, reject)
-        .finally(() => clearTimeout(timerID))
+        .then(() => clearTimeout(timerID))
     )
   })
     .then(opts.onSuccess)

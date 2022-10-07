@@ -173,7 +173,7 @@ describe('Instance', () => {
       .persist()
       .get('/comments')
       .reply(() => {
-        if (count === 0) {
+        if (count < 5) {
           count++
           return [500]
         }
@@ -185,8 +185,10 @@ describe('Instance', () => {
       prefixUrl: 'http://localhost',
       onFailure(error) {
         if (error instanceof YF.ResponseError) {
-          if (error.response.status === 500) {
+          if (error.response.status === 500 && count <= 5) {
             return YF.request(error.response.options)
+          } else if (error.response.ok) {
+            return error.response
           }
         }
 
@@ -196,7 +198,42 @@ describe('Instance', () => {
 
     const result = await api.get('/comments').text()
 
-    expect(count).toBe(1)
+    expect(count).toBe(5)
+    expect(result).toBe('OK')
+
+    scope.done()
+  })
+
+  test('return new `Response` inside `onResponse`', async () => {
+    let count = 0
+    const scope = nock('http://localhost')
+      .persist()
+      .get('/comments')
+      .reply(() => {
+        if (count < 5) {
+          count++
+          return [500]
+        }
+
+        return [200, 'OK']
+      })
+
+    const api = YF.create({
+      prefixUrl: 'http://localhost',
+      onResponse(response) {
+        if (response.status === 500 && count <= 5) {
+          return YF.request(response.options)
+        } else if (response.ok) {
+          return response
+        }
+
+        throw new YF.ResponseError(response)
+      },
+    })
+
+    const result = await api.get('/comments').text()
+
+    expect(count).toBe(5)
     expect(result).toBe('OK')
 
     scope.done()
