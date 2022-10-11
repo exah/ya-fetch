@@ -197,21 +197,19 @@ function request<P extends Input>(baseOptions?: Options<P>): PromiseMethods<P> {
     )
   })
     .then(opts.onResponse)
-    .then(opts.onSuccess, opts.onFailure)
+    .then(opts.onSuccess, opts.onFailure) as PromiseMethods<P>
 
-  return (Object.keys(CONTENT_TYPES) as Array<keyof ContentMethods>).reduce(
-    (acc, key) => {
-      acc[key] = () => {
-        opts.headers.accept = CONTENT_TYPES[key]
-        return promise
-          .then((response) => response.clone())
-          .then((response) => (key === 'void' ? undefined : response[key]()))
-          .then((parsed) => (key === 'json' ? opts.onJSON(parsed) : parsed))
-      }
-      return acc
-    },
-    promise as PromiseMethods<P>
-  )
+  for (const key of Object.keys(CONTENT_TYPES) as Array<keyof ContentMethods>) {
+    promise[key] = () => {
+      opts.headers.accept = CONTENT_TYPES[key]
+      return promise
+        .then((result) => result.clone())
+        .then((result) => (key === 'void' ? undefined : result[key]()))
+        .then((parsed) => (key === 'json' ? opts.onJSON(parsed) : parsed))
+    }
+  }
+
+  return promise
 }
 
 function create<P extends Input>(baseOptions: Options<P> = {}): Instance<P> {
