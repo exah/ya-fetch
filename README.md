@@ -4,7 +4,11 @@
 
 > Super light-weight wrapper around `fetch`
 
+<<<<<<< HEAD
 - [x] Only 1.06 kB when minified & gziped
+=======
+- [x] Only 974 B when minified & gziped
+>>>>>>> 2.0.0
 - [x] Only native API (polyfills for `fetch`, `AbortController` required)
 - [x] Strictly typed with TS
 - [x] Instance with custom defaults

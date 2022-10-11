@@ -210,11 +210,12 @@ function request<P extends Payload>(
         .then(([response, options]) =>
           opts.onRetry(Object.assign(response, { options }), retry)
         )
-        .then(opts.onResponse)
         .then(resolve, reject)
         .then(() => clearTimeout(timerID))
     )
-  }).then(opts.onSuccess, opts.onFailure)
+  })
+    .then(opts.onResponse)
+    .then(opts.onSuccess, opts.onFailure)
 
   return (Object.keys(CONTENT_TYPES) as ContentTypes[]).reduce((acc, key) => {
     acc[key] = () => {
