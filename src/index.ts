@@ -188,13 +188,13 @@ function request<P extends Payload>(baseOptions?: Options<P>): Methods<P> {
       Promise.resolve(opts.getOptions(opts))
         .then((options) => merge(opts, options))
         .then((options) => Promise.all([fetch(opts.url, options), options]))
-        .then(([response, options]) =>
-          opts.onResponse(Object.assign(response, { options }))
-        )
+        .then(([response, options]) => Object.assign(response, { options }))
         .then(resolve, reject)
         .then(() => clearTimeout(timerID))
     )
-  }).then(opts.onSuccess, opts.onFailure)
+  })
+    .then(opts.onResponse)
+    .then(opts.onSuccess, opts.onFailure)
 
   return (Object.keys(CONTENT_TYPES) as ContentTypes[]).reduce((acc, key) => {
     acc[key] = () => {
