@@ -31,6 +31,8 @@ interface StrictOptions<P extends Payload> extends RequestInit {
   json?: P['json']
   /** Object that can be passed to `serialize` */
   params?: Exclude<P['params'], undefined>
+  /** Maximum number of retries to do on failed request */
+  retry: number
   /** Throw `TimeoutError` if timeout is passed */
   timeout: number
   /** String that will prepended to `url` in `fetch` instance */
@@ -52,6 +54,7 @@ interface StrictOptions<P extends Payload> extends RequestInit {
   ): URLSearchParams | string | undefined
   /** Response handler, must handle status codes or throw `ResponseError` */
   onResponse(response: Result<P>): Result<P> | Promise<Result<P>>
+  onRetry(response: Result<P>, retry: number): Result<P> | Promise<Result<P>>
   /** Response handler with success status codes 200-299 */
   onSuccess?(response: Result<P>): Result<P> | Promise<Result<P>>
   /** Error handler. Throw passed `error` for unhandled cases, throw custom errors, or return the new `Response` */
@@ -90,6 +93,7 @@ const DEFAULTS: StrictOptions<Payload> = {
   prefixUrl: '',
   resource: '',
   credentials: 'same-origin',
+  retry: 0,
   timeout: 0,
   highWaterMark: 1024 * 1024 * 10, // 10mb
   serialize,
@@ -99,6 +103,18 @@ const DEFAULTS: StrictOptions<Payload> = {
     }
 
     throw new ResponseError(result)
+  },
+  onRetry(result, retry) {
+    if (!result.ok && retry <= result.options.retry) {
+      return new Promise((resolve) =>
+        setTimeout(
+          () => resolve(request(result.options, retry + 1)),
+          result.options.timeout || 0.3 * 2 ** (retry - 1) * 1000
+        )
+      )
+    }
+
+    return result
   },
   onJSON: (json) => json,
   getOptions: () => undefined,
@@ -149,7 +165,10 @@ function serialize(input: SearchParams): URLSearchParams {
   return params
 }
 
-function request<P extends Payload>(baseOptions?: Options<P>): Methods<P> {
+function request<P extends Payload>(
+  baseOptions?: Options<P>,
+  retry: number = 1
+): Methods<P> {
   const opts = merge(DEFAULTS as StrictOptions<P>, baseOptions)
   const query = Object.keys(opts.params).length
     ? '?' + opts.serialize(opts.params)
@@ -189,8 +208,9 @@ function request<P extends Payload>(baseOptions?: Options<P>): Methods<P> {
         .then((options) => merge(opts, options))
         .then((options) => Promise.all([fetch(opts.url, options), options]))
         .then(([response, options]) =>
-          opts.onResponse(Object.assign(response, { options }))
+          opts.onRetry(Object.assign(response, { options }), retry)
         )
+        .then(opts.onResponse)
         .then(resolve, reject)
         .then(() => clearTimeout(timerID))
     )
