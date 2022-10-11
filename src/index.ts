@@ -194,9 +194,7 @@ function request<P extends Payload>(baseOptions?: Options<P>): Methods<P> {
         .then(resolve, reject)
         .then(() => clearTimeout(timerID))
     )
-  })
-    .then(opts.onSuccess)
-    .catch(opts.onFailure)
+  }).then(opts.onSuccess, opts.onFailure)
 
   return (Object.keys(CONTENT_TYPES) as ContentTypes[]).reduce((acc, key) => {
     acc[key] = () => {
