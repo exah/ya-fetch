@@ -135,9 +135,9 @@ class ResponseError<P extends Payload> extends Error {
 
   constructor(
     response: Result<P>,
-    message = response.statusText || String(response.status)
+    message = response.statusText || response.status
   ) {
-    super(message)
+    super(message as string)
     this.response = response
   }
 }
@@ -156,9 +156,9 @@ function serialize(input: SearchParams): URLSearchParams {
   for (const key of Object.keys(input)) {
     const value = input[key]
     if (Array.isArray(value)) {
-      value.forEach((item) => params.append(key, String(item)))
+      value.forEach((item) => params.append(key, item as string))
     } else {
-      params.set(key, String(value))
+      params.set(key, value as string)
     }
   }
 
