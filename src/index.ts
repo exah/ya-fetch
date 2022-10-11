@@ -105,11 +105,11 @@ const DEFAULTS: StrictOptions<Payload> = {
     throw new ResponseError(result)
   },
   onRetry(result, retry) {
-    if (!result.ok && retry <= result.options.retry) {
+    if (!result.ok && retry < result.options.retry) {
       return new Promise((resolve) =>
         setTimeout(
           () => resolve(request(result.options, retry + 1)),
-          result.options.timeout || 0.3 * 2 ** (retry - 1) * 1000
+          0.3 * 2 ** retry * 1000
         )
       )
     }
@@ -167,7 +167,7 @@ function serialize(input: SearchParams): URLSearchParams {
 
 function request<P extends Payload>(
   baseOptions?: Options<P>,
-  retry: number = 1
+  retry: number = 0
 ): Methods<P> {
   const opts = merge(DEFAULTS as StrictOptions<P>, baseOptions)
   const query = Object.keys(opts.params).length
@@ -207,13 +207,12 @@ function request<P extends Payload>(
       Promise.resolve(opts.getOptions(opts))
         .then((options) => merge(opts, options))
         .then((options) => Promise.all([fetch(opts.url, options), options]))
-        .then(([response, options]) =>
-          opts.onRetry(Object.assign(response, { options }), retry)
-        )
+        .then(([response, options]) => Object.assign(response, { options }))
         .then(resolve, reject)
         .then(() => clearTimeout(timerID))
     )
   })
+    .then((result) => opts.onRetry(result, retry))
     .then(opts.onResponse)
     .then(opts.onSuccess, opts.onFailure)
 
