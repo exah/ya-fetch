@@ -234,20 +234,19 @@ api.get('/posts', { params: { userId: 1, tags: [1, 2] } })
 Install [`node-fetch`](https://github.com/node-fetch/node-fetch), [`form-data`](https://github.com/form-data/form-data), [`abort-controller`](https://github.com/mysticatea/abort-controller) packages and setup them as globally available variables.
 
 ```sh
-yarn add node-fetch abort-controller form-data
+yarn add node-fetch abort-controller
 ```
 
 ```js
-import fetch, { Headers, Request, Response } from 'node-fetch'
+import fetch, { Headers, Request, Response, FormData } from 'node-fetch'
 import AbortController from 'abort-controller'
-import FormData from 'form-data'
 
-global.fetch = fetch
-global.Headers = Headers
-global.Request = Request
-global.Response = Response
-global.AbortController = AbortController
-global.FormData = FormData
+globalThis.fetch = fetch
+globalThis.Headers = Headers
+globalThis.Request = Request
+globalThis.Response = Response
+globalThis.AbortController = AbortController
+globalThis.FormData = FormData
 ```
 
 > ⚠️ Please, note `node-fetch` v2 may hang on large response when using `.clone()` or response type shortcuts (like `.json()`), because of smaller buffer size (16 kB). Use v3 instead and override default value of 10mb when needed with `highWaterMark` option.
