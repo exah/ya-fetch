@@ -21,7 +21,7 @@
 $ npm install --save ya-fetch
 ```
 
-## ⌨️ Usage
+## 👀 Usage
 
 ### Make a request
 
@@ -250,7 +250,7 @@ Creates an instance with needed defaults. Specify parts of `resource` url, `head
 const instance = YF.create({
   resource: 'https://jsonplaceholder.typicode.com',
   headers: {
-    'x-from': 'My site',
+    'x-from': 'Website',
   },
 })
 
@@ -278,12 +278,7 @@ TODO
 ### get<br>post<br>patch<br>put<br>delete<br>head
 
 ```ts
-function get(resource?: string, options?: Options): ResponsePromise
-function post(resource?: string, options?: Options): ResponsePromise
-function patch(resource?: string, options?: Options): ResponsePromise
-function put(resource?: string, options?: Options): ResponsePromise
-function delete(resource?: string, options?: Options): ResponsePromise
-function head(resource?: string, options?: Options): ResponsePromise
+function (resource?: string, options?: Options): ResponsePromise
 ```
 
 Calls `fetch` with preset request method and options:
@@ -299,6 +294,12 @@ The same functions are returned after [creating an instance](#create) with prese
 const instance = YF.create({ resource: 'https://jsonplaceholder.typicode.com' })
 await instance.get('/posts').json()
 // [{ id: 0, title: 'Hello' }, ...]
+```
+
+#### response methods
+
+```
+TODO
 ```
 
 ### options
@@ -350,7 +351,7 @@ await authorized.post('https://jsonplaceholder.typicode.com/posts')
 
 #### json?: unknown
 
-Body for `application/json` type requests, stringified with `JSON.stringify`.
+Body for `application/json` type requests, stringified with `JSON.stringify` and applies needed headers automatically.
 
 ```ts
 await instance.patch('/posts/1', { json: { title: 'Hey' } })
@@ -489,11 +490,6 @@ const api = YF.create({
   },
 })
 ```
-
-## 🔗 Alternatives
-
-- [`ky`](https://github.com/sindresorhus/ky) - Library that inspired this one, but 3x times bigger and not transpiled for es5 browsers
-- [`axios`](https://github.com/axios/axios) - Based on old `XMLHttpRequests` API, almost 5x times bigger, but super popular and feature packed
 
 ---
 
