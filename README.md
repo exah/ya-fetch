@@ -491,6 +491,24 @@ const api = YF.create({
 })
 ```
 
+### request
+
+```
+TODO
+```
+
+### ResponseError
+
+```
+TODO
+```
+
+### TimeoutError
+
+```
+TODO
+```
+
 ---
 
 MIT © [John Grishin](http://johngrish.in)
