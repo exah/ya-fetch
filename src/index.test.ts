@@ -16,15 +16,14 @@ describe('Instance', () => {
     expect(api.patch).toBeInstanceOf(Function)
     expect(api.delete).toBeInstanceOf(Function)
     expect(api.head).toBeInstanceOf(Function)
-    expect(api.options).toEqual({})
   })
 
-  test('should prepend prefixUrl with create options', async () => {
+  test('should prepend resource with create options', async () => {
     const scope = nock('http://localhost')
       .get('/comments')
       .reply(200, [1, 2, 3, 4])
 
-    const api = YF.create({ prefixUrl: 'http://localhost' })
+    const api = YF.create({ resource: 'http://localhost' })
     const result = await api.get('/comments').json<number[]>()
 
     expect(result).toEqual([1, 2, 3, 4])
@@ -32,8 +31,7 @@ describe('Instance', () => {
   })
 
   test('should extend instance with new options', async () => {
-    const base = YF.create({ prefixUrl: 'http://localhost' })
-    expect(base.options.prefixUrl).toBe('http://localhost')
+    const base = YF.create({ resource: 'http://localhost' })
 
     const extended = base.extend({
       headers: {
@@ -41,34 +39,12 @@ describe('Instance', () => {
       },
     })
 
-    expect(extended.options.prefixUrl).toBe('http://localhost')
-    expect(extended.options.headers?.Authorization).toBe('Bearer ::Token::')
-
     const scope = nock('http://localhost')
       .matchHeader('Authorization', 'Bearer ::Token::')
       .get('/comments')
       .reply(200)
 
     await extended.get('/comments')
-    scope.done()
-  })
-
-  test('should be possible to modify options in instance', async () => {
-    const api = YF.create({ prefixUrl: 'http://localhost' })
-    expect(api.options.prefixUrl).toBe('http://localhost')
-
-    api.options.prefixUrl = 'https://example.com'
-    api.options.headers = { Authorization: 'Bearer ::Token::' }
-
-    expect(api.options.prefixUrl).toBe('https://example.com')
-    expect(api.options.headers.Authorization).toBe('Bearer ::Token::')
-
-    const scope = nock('https://example.com')
-      .matchHeader('Authorization', 'Bearer ::Token::')
-      .get('/comments')
-      .reply(200)
-
-    await api.get('/comments')
     scope.done()
   })
 
@@ -102,7 +78,7 @@ describe('Instance', () => {
       .reply(200, 'ok')
 
     const api = YF.create({
-      prefixUrl: 'http://localhost',
+      resource: 'http://localhost',
       params: { accessToken: 1 },
     })
 
@@ -120,7 +96,7 @@ describe('Instance', () => {
       .reply(200, { data: [1, 2, 3, 4] })
 
     const api = YF.create({
-      prefixUrl: 'http://localhost',
+      resource: 'http://localhost',
       onJSON: (parsed: { data: Comments }) => parsed.data,
     })
 
@@ -131,8 +107,16 @@ describe('Instance', () => {
   })
 
   test('should be able to return custom error `onFailure`', async () => {
-    enum ERRORS {
+    enum ErrorCode {
       'Foo Error' = 100,
+    }
+
+    class CustomResponseError extends YF.ResponseError {
+      code: ErrorCode
+      constructor(response: YF.Response, code: ErrorCode) {
+        super(response, ErrorCode[code])
+        this.code = code
+      }
     }
 
     const scope = nock('http://localhost')
@@ -140,15 +124,15 @@ describe('Instance', () => {
       .reply(403, { errorCode: 100 })
 
     const api = YF.create({
-      prefixUrl: 'http://localhost',
-      onFailure: async (error) => {
+      resource: 'http://localhost',
+      async onFailure(error) {
         if (error instanceof YF.ResponseError) {
           if (error.response.status === 403) {
-            const parsed = (await error.response.json()) as {
-              errorCode: ERRORS
-            }
+            const json = await error.response.json()
 
-            throw new YF.ResponseError(error.response, ERRORS[parsed.errorCode])
+            if ('errorCode' in json) {
+              throw new CustomResponseError(error.response, json.errorCode)
+            }
           }
         }
 
@@ -159,8 +143,9 @@ describe('Instance', () => {
     try {
       await api.get('/comments')
     } catch (error) {
-      if (error instanceof Error) {
+      if (error instanceof CustomResponseError) {
         expect(error.message).toEqual('Foo Error')
+        expect(error.code).toEqual(ErrorCode['Foo Error'])
       }
     }
 
@@ -182,7 +167,7 @@ describe('Instance', () => {
       })
 
     const api = YF.create({
-      prefixUrl: 'http://localhost',
+      resource: 'http://localhost',
       onFailure(error) {
         if (error instanceof YF.ResponseError) {
           if (error.response.status === 500 && count <= 5) {
@@ -219,7 +204,7 @@ describe('Instance', () => {
       })
 
     const api = YF.create({
-      prefixUrl: 'http://localhost',
+      resource: 'http://localhost',
       onResponse(response) {
         if (response.status === 500 && count <= 5) {
           return YF.request(response.options)
@@ -245,8 +230,10 @@ describe('Instance', () => {
       .reply(200, 'ok')
 
     const api = YF.create({
-      prefixUrl: 'http://localhost',
-      params: { accessToken: '1' },
+      resource: 'http://localhost',
+      params: {
+        accessToken: '1',
+      },
       serialize: (params) =>
         queryString.stringify(params, { arrayFormat: 'bracket' }),
     })
@@ -332,15 +319,14 @@ describe('Response', () => {
     scope.done()
   })
 
-  test('should be possible to get headers with a function', async () => {
+  test('should be possible to set headers with a function', async () => {
+    let token = 'none'
+
     const scope = nock('https://example.com')
-    const state = { token: 'none' }
     const api = YF.create({
-      prefixUrl: 'https://example.com',
-      getOptions: () => {
-        return {
-          headers: { Authorization: `Bearer ${state.token}` },
-        }
+      resource: 'https://example.com',
+      onRequest(options) {
+        options.headers.set('Authorization', `Bearer ${token}`)
       },
     })
 
@@ -348,33 +334,34 @@ describe('Response', () => {
       .get('/comments')
       .matchHeader('Authorization', 'Bearer token-1')
       .reply(200)
-    state.token = 'token-1'
+    token = 'token-1'
     await api.get('/comments')
 
     scope
       .get('/users')
       .matchHeader('Authorization', 'Bearer token-2')
       .reply(200)
-    state.token = 'token-2'
+    token = 'token-2'
     await api.get('/users')
 
     scope.done()
   })
 
-  test('should be possible to get headers with an async function', async () => {
+  test('should be possible to set headers with an async function', async () => {
+    let token = 'none'
+
     const scope = nock('https://example.com')
-    const state = { token: 'none' }
     const api = YF.create({
-      prefixUrl: 'https://example.com',
+      resource: 'https://example.com',
       headers: { 'x-static': 'static value' },
-      getOptions: async ({ url, method, headers }) => {
-        expect(url).toMatch(/example\.com\//)
-        expect(method).toBe('GET')
-        expect(headers).toHaveProperty('x-static', 'static value')
-        expect(headers).not.toHaveProperty('Authorization')
-        expect(headers).not.toHaveProperty('authorization')
+      async onRequest(options) {
+        expect(options.resource).toMatch(/example\.com\/(users|comments)/)
+        expect(options.method).toBe('GET')
+        expect(options.headers.get('x-static')).toEqual('static value')
+        expect(options.headers.has('Authorization')).toEqual(false)
+
         await new Promise((resolve) => setTimeout(resolve, 32))
-        return { headers: { Authorization: `Bearer ${state.token}` } }
+        options.headers.set('Authorization', `Bearer ${token}`)
       },
     })
 
@@ -382,20 +369,24 @@ describe('Response', () => {
       .get('/comments')
       .matchHeader('Authorization', 'Bearer token-1')
       .reply(200)
-    state.token = 'pre-token-1'
+
+    token = 'pre-token-1'
     setTimeout(() => {
-      state.token = 'token-1'
+      token = 'token-1'
     }, 16)
+
     await api.get('/comments')
 
     scope
       .get('/users')
       .matchHeader('Authorization', 'Bearer token-2')
       .reply(200)
-    state.token = 'pre-token-2'
+
+    token = 'pre-token-2'
     setTimeout(() => {
-      state.token = 'token-2'
+      token = 'token-2'
     }, 16)
+
     await api.get('/users')
 
     scope.done()
