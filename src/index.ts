@@ -1,9 +1,9 @@
-interface ParamsRecord
+interface SearchParams
   extends Record<string, string | number | Array<string | number>> {}
 
 interface Payload {
   json?: unknown
-  params?: ParamsRecord | URLSearchParams | string
+  params?: SearchParams | URLSearchParams | string
 }
 
 interface Response<P extends Payload = Payload> extends globalThis.Response {
@@ -24,7 +24,7 @@ interface ResponsePromise<P extends Payload = Payload>
     BodyMethods {}
 
 interface Serializer {
-  (params: ParamsRecord): URLSearchParams | string
+  (params: SearchParams): URLSearchParams | string
 }
 
 interface RequestMethod<P extends Payload> {
@@ -142,13 +142,13 @@ const DEFAULTS: RequiredOptions<Payload> = {
   onJSON: (json) => json,
 }
 
-function defaultSerialize(input: ParamsRecord): URLSearchParams {
+function defaultSerialize(input: SearchParams): URLSearchParams {
   const params = new URLSearchParams()
 
   for (const key of Object.keys(input)) {
     if (Array.isArray(input[key])) {
       // @ts-expect-error
-      input[key].forEach((item) => params.append(key, item))
+      input[key].forEach((item) => params.append(key, item as string))
     } else {
       params.append(key, input[key] as string)
     }
@@ -164,20 +164,14 @@ function mergeMaps<Init, Request extends URLSearchParams | Headers>(
 ): Request {
   const result = new M(left)
 
-  new M(right).forEach((value, key) => {
-    if (value === 'undefined') {
-      result.delete(key)
-    } else {
-      result.append(key, value)
-    }
-  })
+  new M(right).forEach((value, key) => result.append(key, value))
 
   return result
 }
 
 const normalizeParams = (
   serialize: Serializer = defaultSerialize,
-  params: ParamsRecord | URLSearchParams | string = ''
+  params: SearchParams | URLSearchParams | string = ''
 ) =>
   typeof params === 'string' || params instanceof URLSearchParams
     ? params
