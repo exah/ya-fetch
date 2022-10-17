@@ -21,7 +21,7 @@
 $ npm install --save ya-fetch
 ```
 
-## 👀 Usage
+## 👀 Examples
 
 ### Make a request
 
