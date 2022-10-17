@@ -6,12 +6,12 @@
 
 - [x] Only 1 kB when minified & gziped
 - [x] Based on [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) & [AbortController](https://developer.mozilla.org/en-US/docs/Web/API/AbortController)
-- [x] Strictly typed with TS
-- [x] Instance with custom defaults
-- [x] Content type shortcuts
-- [x] First class JSON support
-- [x] Search params serialization
-- [x] Timeouts
+- [x] Custom [instance](#create) with options (`headers`, `error` handlers, ...)
+- [x] Exposed response body [methods](#response-methods) (`.json`, `.blob`, ...)
+- [x] Fist-class [JSON support](#send--receive-json) (automatic serialization, content type headers)
+- [x] [Search params](#params-urlsearchparams--object--string) serialization
+- [x] Global [timeouts](#timeout-number)
+- [x] Written in TypeScript
 - [x] Pure ESM module
 - [x] Zero deps
 
@@ -28,13 +28,13 @@ $ npm install --save ya-fetch
 ```js
 import * as YF from 'ya-fetch'
 
-const result = await YF.patch('http://example.com/posts', {
-  params: { id: 1 },
-  json: { title: 'New Post' },
+await YF.patch('https://jsonplaceholder.typicode.com/posts/1', {
+  json: {
+    title: 'New Title',
+  },
 }).json()
 
-console.log(result)
-// → { userId: 1, id: 1, title: 'New Post', body: 'Some text', }
+// → { id: 1, title: 'New Title', ... }
 ```
 
 ### Create instance
@@ -48,12 +48,12 @@ export const api = YF.create({
 })
 ```
 
-### Search params
+### Set search params
 
 ```js
 import { api } from './api'
 
-api.get('/posts', { params: { userId: 1 } }).json()
+await api.get('/posts', { params: { userId: 1 } }).json()
 ```
 
 <details><summary>Same code without wrapper</summary>
@@ -75,7 +75,7 @@ fetch('http://example.com/posts?id=1').then((res) => {
 ```js
 import { api } from './api'
 
-api.post('/posts', { json: { title: 'New Post' } }).json()
+await api.post('/posts', { json: { title: 'New Post' } }).json()
 ```
 
 <details><summary>Same code without wrapper</summary>
@@ -124,15 +124,13 @@ Cancel request if it is not fulfilled in period of time.
 import { TimeoutError } from 'ya-fetch'
 import { api } from './api'
 
-api
-  .get('/posts', { timeout: 300 })
-  .json()
-  .then((posts) => console.log(posts))
-  .catch((error) => {
-    if (error instanceof TimeoutError) {
-      // do something
-    }
-  })
+try {
+  await api.get('/posts', { timeout: 300 }).json()
+} catch (error) {
+  if (error instanceof TimeoutError) {
+    // do something, or nothing
+  }
+}
 ```
 
 <details><summary>Same code without wrapper</summary>
@@ -195,11 +193,11 @@ const posts = api.extend({
   resource: '/posts',
 })
 
-await posts.get().json() // [{ id: 0, title: 'Hello' }, ...]
-await posts.get(0).json() // { id: 0, title: 'Hello' }
-await posts.post({ json: { title: 'Bye' } }).json() // { id: 1, title: 'Bye' }
-await posts.patch(0, { json: { title: 'Hey' } }).json() // { id: 0, title: 'Hey' }
-await posts.delete(1).void() // undefined
+await posts.get().json() // → [{ id: 0, title: 'Hello' }, ...]
+await posts.get(0).json() // → { id: 0, title: 'Hello' }
+await posts.post({ json: { title: 'Bye' } }).json() // → { id: 1, title: 'Bye' }
+await posts.patch(0, { json: { title: 'Hey' } }).json() // → { id: 0, title: 'Hey' }
+await posts.delete(1).void() // → undefined
 ```
 
 ### Node.js Support
@@ -285,7 +283,7 @@ Calls `fetch` with preset request method and options:
 
 ```ts
 await YF.get('https://jsonplaceholder.typicode.com/posts').json()
-// [{ id: 0, title: 'Hello' }, ...]
+// → [{ id: 0, title: 'Hello' }, ...]
 ```
 
 The same functions are returned after [creating an instance](#create) with preset options:
@@ -293,7 +291,7 @@ The same functions are returned after [creating an instance](#create) with prese
 ```ts
 const instance = YF.create({ resource: 'https://jsonplaceholder.typicode.com' })
 await instance.get('/posts').json()
-// [{ id: 0, title: 'Hello' }, ...]
+// → [{ id: 0, title: 'Hello' }, ...]
 ```
 
 #### response methods
