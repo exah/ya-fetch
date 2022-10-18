@@ -21,6 +21,11 @@
 $ npm install --save ya-fetch
 ```
 
+## ⬇️ Jump to
+
+- [Examples](#👀-examples)
+- [API](#📖-api)
+
 ## 👀 Examples
 
 ### Make a request
@@ -294,7 +299,39 @@ await instance.get('/posts').json()
 // → [{ id: 0, title: 'Hello' }, ...]
 ```
 
-#### response methods
+**Returns `ResponsePromise` with exposed body methods:**
+
+#### → json\<T>(): Promise\<T>
+
+```
+TODO
+```
+
+#### → text(): Promise\<string>
+
+```
+TODO
+```
+
+#### → formData(): Promise\<FormData>
+
+```
+TODO
+```
+
+#### → arrayBuffer(): Promise\<ArrayBuffer>
+
+```
+TODO
+```
+
+#### → blob(): Promise\<Blob>
+
+```
+TODO
+```
+
+#### → void(): Promise\<void>
 
 ```
 TODO
