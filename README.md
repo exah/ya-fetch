@@ -446,7 +446,7 @@ const authorized = instance.extend({
   },
 })
 
-// will include `Authorization` will be resolved with async `Bearer token`.
+// request will be sent with `Authorization` header resolved with async `Bearer token`.
 await authorized.get('/posts')
 ```
 
