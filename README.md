@@ -380,7 +380,7 @@ const authorized = instance.extend({
   headers: { Authorization: 'Bearer token' },
 })
 
-// will send be send with `Authorization` and `x-from` headers
+// will be sent with `Authorization` and `x-from` headers
 await authorized.post('https://jsonplaceholder.typicode.com/posts')
 ```
 
