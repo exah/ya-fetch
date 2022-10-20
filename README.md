@@ -422,7 +422,7 @@ await instance.get('/posts', { params: { userId: 1, tags: [1, 2] } })
 
 #### timeout?: number
 
-If specified `TimeoutError` will be thrown and the request will be cancelled after the specified duration.
+If specified, `TimeoutError` will be thrown and the request will be cancelled after the specified duration.
 
 ```ts
 try {
