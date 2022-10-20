@@ -8,7 +8,7 @@
 - [x] Based on [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) & [AbortController](https://developer.mozilla.org/en-US/docs/Web/API/AbortController)
 - [x] Custom [instance](#create) with options (`headers`, `error` handlers, ...)
 - [x] Exposed response body [methods](#response-methods) (`.json`, `.blob`, ...)
-- [x] Fist-class [JSON support](#send--receive-json) (automatic serialization, content type headers)
+- [x] First-class [JSON support](#send--receive-json) (automatic serialization, content type headers)
 - [x] [Search params](#params-urlsearchparams--object--string) serialization
 - [x] Global [timeouts](#timeout-number)
 - [x] Written in TypeScript
@@ -121,6 +121,20 @@ export const api = YF.create({
 })
 ```
 
+### Send form data (native fetch behaviour)
+
+Provide `FormData` object inside `body` to send `multipart/form-data` request, headers are set automatically by following native [fetch](http://developer.mozilla.org/en-US/docs/Web/API/fetch) behaviour.
+
+```js
+const body = new FormData()
+
+body.set('title', 'My Title')
+body.set('image', myFile, 'image.jpg')
+
+// will send 'Content-type': 'multipart/form-data' request
+await api.post('/posts', { body }).void() // → undefined
+```
+
 ### Timeout
 
 Cancel request if it is not fulfilled in period of time.
@@ -183,8 +197,8 @@ const api = YF.create({
     queryString.stringify(params, { arrayFormat: 'bracket' }),
 })
 
-api.get('/posts', { params: { userId: 1, tags: [1, 2] } })
-// https://jsonplaceholder.typicode.com/posts?userId=1&tags[]=1&tags[]=2
+// will send request to: 'https://jsonplaceholder.typicode.com/posts?userId=1&tags[]=1&tags[]=2'
+await api.get('/posts', { params: { userId: 1, tags: [1, 2] } })
 ```
 
 ### Extend an instance
@@ -266,10 +280,24 @@ const instance = YF.create({
 // instance.extend
 ```
 
-#### extend
+### extend
 
-```
-TODO
+Take an instance and extend it with additional options, the [`headers`](#headers-headersinit) and [`params`](#params-urlsearchparams--object--string) will be merged with values provided in parent instance, the [`resource`](#resource-string) will concatenated to the parent value.
+
+```js
+const instance = YF.create({
+  resource: 'https://jsonplaceholder.typicode.com',
+  headers: { 'X-Custom-Header': 'Foo' },
+})
+
+// will have combined `resource` and merged `headers`
+const extension = instance.extend({
+  resource: '/posts'
+  headers: { 'X-Something-Else': 'Bar' },
+})
+
+// will send request to: 'https://jsonplaceholder.typicode.com/posts/1'
+await extension.post(1)
 ```
 
 #### Related
@@ -339,9 +367,25 @@ TODO
 
 ### options
 
+Accepts all the options from native [fetch](http://developer.mozilla.org/en-US/docs/Web/API/fetch#parameters) in the desktop browsers, or [`node-fetch`](https://github.com/node-fetch/node-fetch#options) in node.js. Additionally you can specify the options:
+
+- [resource](#resource-string)
+- [headers](#headers-headersinit)
+- [json](#json-unknown)
+- [params](#params-urlsearchparams--object--string)
+- [serialize](#serialize-params-object-urlsearchparams--string)
+- [timeout](#timeout-number)
+
+And global hooks:
+
+- [onRequest](#onrequestoptions-requestoptions-promisevoid--void)
+- [onResponse](#onresponseresponse-response-promiseresponse--response)
+- [onSuccess](#onsuccessresponse-response-promiseresponse--response)
+- [onFailure](#onfailureerror-responseerror--timeouterror--error-promiseresponse--response)
+
 #### resource?: string
 
-Part of the request URL. If used multiple times all the parts will be combined in final URL. The same as first argument of `get`, `post`, `patch`, `put`, `delete`, `head`.
+Part of the request URL. If used multiple times all the parts will be concatenated to final URL. The same as first argument of `get`, `post`, `patch`, `put`, `delete`, `head`.
 
 ```ts
 const instance = YF.create({
@@ -365,7 +409,7 @@ await posts.get()
 
 #### headers?: HeadersInit
 
-Request headers. Multiple `headers` will merged together.
+Request headers, the same as in [Fetch](http://developer.mozilla.org/en-US/docs/Web/API/Fetch_API), except multiple `headers` will merge when you [extend](#extend) an instance.
 
 ```ts
 const instance = YF.create({
@@ -522,6 +566,24 @@ const api = YF.create({
 
     trackError(error)
     throw error
+  },
+})
+```
+
+#### onJSON(input: unknown): unknown
+
+Customize global handling of the [json](#→-jsont-promiset) body. Useful for the cases when all the BE json responses inside the same shape object with `.data`.
+
+```js
+const api = YF.create({
+  onJSON(input) {
+    // In case needed data inside object like
+    // { data: unknown, status: string })
+    if (typeof input === 'object' && input !== null) {
+      return input.data
+    }
+
+    return input
   },
 })
 ```

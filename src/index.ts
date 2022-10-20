@@ -129,7 +129,6 @@ const CONTENT_TYPES = {
 } as const
 
 const DEFAULTS: RequiredOptions<Payload> = {
-  credentials: 'same-origin',
   highWaterMark: 1024 * 1024 * 10, // 10mb
   onRequest: () => {},
   onResponse(result) {
