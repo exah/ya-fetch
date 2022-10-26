@@ -61,7 +61,7 @@ import { api } from './api'
 await api.get('/posts', { params: { userId: 1 } }).json()
 ```
 
-<details><summary>Same code without wrapper</summary>
+<details><summary>Same code with native <code>fetch</code></summary>
 
 ```js
 fetch('http://example.com/posts?id=1').then((res) => {
@@ -83,7 +83,7 @@ import { api } from './api'
 await api.post('/posts', { json: { title: 'New Post' } }).json()
 ```
 
-<details><summary>Same code without wrapper</summary>
+<details><summary>Same code with native <code>fetch</code></summary>
 
 ```js
 fetch('http://example.com/posts', {
@@ -152,7 +152,7 @@ try {
 }
 ```
 
-<details><summary>Same code without wrapper</summary>
+<details><summary>Same code with native <code>fetch</code></summary>
 
 ```js
 const controller = new AbortController()
@@ -327,25 +327,102 @@ await instance.get('/posts').json()
 // → [{ id: 0, title: 'Hello' }, ...]
 ```
 
-**Returns `ResponsePromise` with exposed body methods:**
+#### Returns `ResponsePromise` with exposed body methods:
 
 #### → json\<T>(): Promise\<T>
 
+Sets `Accept: 'application/json'` in `headers` and parses the `body` as JSON:
+
+```ts
+interface Post {
+  id: number
+  title: string
+  content: string
+}
+
+const post = await instance.get('/posts').json<Post[]>()
 ```
-TODO
+
+<details><summary>Same code with native <code>fetch</code></summary>
+
+```ts
+interface Post {
+  id: number
+  title: string
+  content: string
+}
+
+const response = await fetch('https://jsonplaceholder.typicode.com/posts', {
+  headers: { Accept: 'application/json' },
+})
+
+if (response.ok) {
+  const post: Post[] = await response.json()
+}
 ```
+
+</details>
 
 #### → text(): Promise\<string>
 
+Sets `Accept: 'text/*'` in `headers` and parses the `body` as plain text:
+
+```ts
+await instance.delete('/posts/1').text() // → 'OK'
 ```
-TODO
+
+<details><summary>Same code with native <code>fetch</code></summary>
+
+```ts
+const response = await fetch('https://jsonplaceholder.typicode.com/posts', {
+  headers: { Accept: 'text/*' },
+  method: 'DELETE',
+})
+
+if (response.ok) {
+  await response.text() // → 'OK'
+}
 ```
+
+</details>
 
 #### → formData(): Promise\<FormData>
 
+Sets `Accept: 'multipart/form-data'` in `headers` and parses the `body` as [FormData](https://developer.mozilla.org/en-US/docs/Web/API/FormData):
+
+```ts
+const body = new FormData()
+
+body.set('title', 'Hello world')
+body.set('content', '🌎')
+
+const data = await instance.post('/posts', { body }).formData()
+
+data.get('id') // → 1
 ```
-TODO
+
+<details><summary>Same code with native <code>fetch</code></summary>
+
+```ts
+const body = new FormData()
+
+body.set('title', 'Hello world')
+body.set('content', '🌎')
+
+const response = await fetch('https://jsonplaceholder.typicode.com/posts', {
+  headers: { Accept: 'multipart/form-data' },
+  method: 'POST',
+  body,
+})
+
+if (response.ok) {
+  const data = await response.formData()
+
+  data.get('id') // → 1
+}
 ```
+
+</details>
 
 #### → arrayBuffer(): Promise\<ArrayBuffer>
 
