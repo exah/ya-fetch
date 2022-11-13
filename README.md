@@ -961,8 +961,10 @@ try {
 ### Renamed `prefixUrl` → [`resource`](#resource-string)
 
 ```diff
-- const api = YF.create({ prefixUrl: 'https://example.com' })
-+ const api = YF.create({ resource: 'https://example.com' })
+const api = YF.create({
+-  prefixUrl: 'https://example.com'
++  resource: 'https://example.com'
+})
 ```
 
 ### Remove `getHeaders` use [`onRequest`](#onrequesturl-url-options-requestoptions-promisevoid--void) instead
