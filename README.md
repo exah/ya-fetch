@@ -21,10 +21,7 @@
 $ npm install --save ya-fetch
 ```
 
-## ⬇️ Jump to
-
-- [Examples](#👀-examples)
-- [API](#📖-api)
+## ⬇️ Jump to [API docs](#📖-api)
 
 ## 👀 Examples
 
@@ -241,6 +238,8 @@ globalThis.AbortController = AbortController
 
 > ⚠️ Please, note `node-fetch` v2 may hang on large response when using `.clone()` or response type shortcuts (like `.json()`) because of smaller buffer size (16 kB). Use v3 instead and override default value of 10mb when needed with `highWaterMark` option.
 
+## ⬆️ Jump to [Examples](#👀-examples)
+
 ## 📖 API
 
 ```ts
@@ -426,21 +425,90 @@ if (response.ok) {
 
 #### → arrayBuffer(): Promise\<ArrayBuffer>
 
+Sets `Accept: '*/*'` in `headers` and parses the `body` as [ArrayBuffer](http://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer):
+
+```ts
+const buffer = await instance.get('Example.ogg').arrayBuffer()
+const context = new AudioContext()
+const source = new AudioBufferSourceNode(context)
+
+source.buffer = await context.decodeAudioData(buffer)
+source.connect(context.destination)
+source.start()
 ```
-TODO
+
+<details><summary>Same code with native <code>fetch</code></summary>
+
+```ts
+const response = await fetch(
+  'https://upload.wikimedia.org/wikipedia/commons/c/c8/Example.ogg'
+)
+
+if (response.ok) {
+  const data = await response.arrayBuffer()
+  const context = new AudioContext()
+  const source = new AudioBufferSourceNode(context)
+
+  source.buffer = await context.decodeAudioData(buffer)
+  source.connect(context.destination)
+  source.start()
+}
 ```
+
+</details>
 
 #### → blob(): Promise\<Blob>
 
+Sets `Accept: '*/*'` in `headers` and parses the `body` as [Blob](http://developer.mozilla.org/en-US/docs/Web/API/Blob):
+
+```ts
+const blob = await YF.get('https://placekitten.com/200').blob()
+const image = new Image()
+
+image.src = URL.createObjectURL(blob)
+document.body.append(image)
 ```
-TODO
+
+<details><summary>Same code with native <code>fetch</code></summary>
+
+```ts
+const response = await fetch('https://placekitten.com/200')
+
+if (response.ok) {
+  const blob = await response.blob()
+  const image = new Image()
+
+  image.src = URL.createObjectURL(blob)
+  document.body.append(image)
+}
 ```
+
+</details>
 
 #### → void(): Promise\<void>
 
+Sets `Accept: '*/*'` in `headers` and returns [`undefined`](http://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/undefined) after the request:
+
+```ts
+await instance.post('/posts', { title: 'Hello' })
+// do something
 ```
-TODO
+
+<details><summary>Same code with native <code>fetch</code></summary>
+
+```ts
+const response = await fetch('https://jsonplaceholder.typicode.com/posts', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ title: 'Hello' }),
+})
+
+if (response.ok) {
+  // do something
+}
 ```
+
+</details>
 
 ### options
 
@@ -665,22 +733,31 @@ const api = YF.create({
 })
 ```
 
-### request
-
-```
-TODO
-```
-
 ### ResponseError
 
-```
-TODO
+Instance of [`Error` ](http://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error) with failed `YF.Response` (based on [Response](http://developer.mozilla.org/en-US/docs/Web/API/Response/Response)) inside `.response`:
+
+```ts
+try {
+  await instance.get('/posts').json()
+} catch (error) {
+  if (error instanceof ResponseError) {
+    error.response.status // property on Response
+    error.response.options // the same as options used to create instance and make a request
+  }
+}
 ```
 
 ### TimeoutError
 
-```
-TODO
+```ts
+try {
+  await api.get('/posts', { timeout: 300 }).json()
+} catch (error) {
+  if (error instanceof TimeoutError) {
+    // do something, or nothing
+  }
+}
 ```
 
 ---
