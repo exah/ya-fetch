@@ -29,11 +29,15 @@ $ npm install --save ya-fetch
 
 ## 👀 Examples
 
+### Import module
+
+```ts
+import * as YF from 'ya-fetch'
+```
+
 ### Create an instance
 
-```js
-import * as YF from 'ya-fetch'
-
+```ts
 const api = YF.create({ resource: 'https://jsonplaceholder.typicode.com' })
 ```
 
@@ -45,13 +49,13 @@ const api = YF.create({ resource: 'https://jsonplaceholder.typicode.com' })
 
 ### Send & receive JSON
 
-```js
+```ts
 await api.post('/posts', { json: { title: 'New Post' } }).json()
 ```
 
 <details><summary>Same code with native <code>fetch</code></summary>
 
-```js
+```ts
 fetch('http://example.com/posts', {
   method: 'POST',
   headers: {
@@ -78,13 +82,13 @@ fetch('http://example.com/posts', {
 
 ### Set search params
 
-```js
+```ts
 await api.get('/posts', { params: { userId: 1 } }).json()
 ```
 
 <details><summary>Same code with native <code>fetch</code></summary>
 
-```js
+```ts
 fetch('http://example.com/posts?id=1').then((res) => {
   if (res.ok) {
     return res.json()
@@ -107,8 +111,7 @@ fetch('http://example.com/posts?id=1').then((res) => {
 
 You can use an async or regular function to modify the options before the request.
 
-```js
-import * as YF from 'ya-fetch'
+```ts
 import { getToken } from './global-state'
 
 const api = YF.create({
@@ -203,7 +206,6 @@ fetch('http://example.com/posts', {
 > By default parsed and stringified with [URLSearchParams](https://developer.mozilla.org/en-US/docs/Web/API/URLsearchParams) and additional improvements to parsing of arrays.
 
 ```js
-import * as YF from 'ya-fetch'
 import queryString from 'query-string'
 
 const api = YF.create({
