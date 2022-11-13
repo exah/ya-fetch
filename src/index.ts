@@ -146,7 +146,7 @@ function defaultSerialize(input: SearchParams): URLSearchParams {
 
   for (const key of Object.keys(input)) {
     if (Array.isArray(input[key])) {
-      // @ts-expect-error
+      // @ts-expect-error checked the variable inside if statement
       input[key].forEach((item) => params.append(key, item as string))
     } else {
       params.append(key, input[key] as string)
@@ -257,8 +257,7 @@ function request<P extends Payload>(
     promise[key] = () => {
       options.headers.set('accept', CONTENT_TYPES[key])
       return promise
-        .then((result) => result.clone())
-        .then((result) => (key === 'void' ? undefined : result[key]()))
+        .then((result) => (key === 'void' ? undefined : result.clone()[key]()))
         .then((parsed) => (key === 'json' ? options.onJSON(parsed) : parsed))
     }
   }
