@@ -1030,6 +1030,11 @@ try {
 - `isTimeoutError`
 - `isAbortError`
 
+## 🔗 Alternatives
+
+- [`ky`](https://github.com/sindresorhus/ky) - Library that inspired this one, but 3x times bigger and feature packed
+- [`axios`](https://github.com/axios/axios) - Based on old `XMLHttpRequests` API, almost 9x times bigger, but super popular and feature packed
+
 ---
 
 MIT © [John Grishin](http://johngrish.in)
