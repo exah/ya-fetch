@@ -33,6 +33,12 @@ import * as YF from 'ya-fetch'
 const api = YF.create({ resource: 'https://jsonplaceholder.typicode.com' })
 ```
 
+#### Related
+
+- [`create`](#create)
+- [`instance`](#returns-instance)
+- [`options.resource`](#resource-string)
+
 ### Send & receive JSON
 
 ```js
@@ -60,6 +66,12 @@ fetch('http://example.com/posts', {
 
 </details>
 
+#### Related
+
+- [`post`](#getbrpostbrpatchbrputbrdeletebrhead)
+- [`options.json`](#json-unknown)
+- [`promise.json`](#json)
+
 ### Set search params
 
 ```js
@@ -80,6 +92,13 @@ fetch('http://example.com/posts?id=1').then((res) => {
 
 </details>
 
+#### Related
+
+- [`get`](#getbrpostbrpatchbrputbrdeletebrhead)
+- [`options.params`](#params-urlsearchparams--object--string)
+- [`options.serialize`](#serialize-params-object-urlsearchparams--string)
+- [`promise.json`](#json)
+
 ### Set options dynamically
 
 You can use an async or regular function to modify the options before the request.
@@ -90,11 +109,17 @@ import { getToken } from './global-state'
 
 const api = YF.create({
   resource: 'https://jsonplaceholder.typicode.com',
-  async onRequest(options) {
+  async onRequest(url, options) {
     options.headers.set('Authorization', `Bearer ${await getToken()}`)
   },
 })
 ```
+
+#### Related
+
+- [`create`](#create)
+- [`options.resource`](#resource-string)
+- [`options.onRequest`](#onrequesturl-url-options-requestoptions-promisevoid--void)
 
 ### Send form data (native fetch behaviour)
 
@@ -109,6 +134,12 @@ body.set('image', myFile, 'image.jpg')
 // will send 'Content-type': 'multipart/form-data' request
 await api.post('/posts', { body })
 ```
+
+#### Related
+
+- [`create`](#create)
+- [`options.resource`](#resource-string)
+- [`options.onRequest`](#onrequestoptions-requestoptions-promisevoid--void)
 
 ### Set timeout
 
@@ -157,6 +188,12 @@ fetch('http://example.com/posts', {
 
 </details>
 
+#### Related
+
+- [`get`](#getbrpostbrpatchbrputbrdeletebrhead)
+- [`options.timeout`](#timeout-number)
+- [`promise.json`](#json)
+
 ### Provide custom search params serializer
 
 > By default parsed and stringified with [URLSearchParams](https://developer.mozilla.org/en-US/docs/Web/API/URLsearchParams) and additional improvements to parsing of arrays.
@@ -167,13 +204,21 @@ import queryString from 'query-string'
 
 const api = YF.create({
   resource: 'https://jsonplaceholder.typicode.com',
-  serializer: (params) =>
+  serialize: (params) =>
     queryString.stringify(params, { arrayFormat: 'bracket' }),
 })
 
 // will send request to: 'https://jsonplaceholder.typicode.com/posts?userId=1&tags[]=1&tags[]=2'
 await api.get('/posts', { params: { userId: 1, tags: [1, 2] } })
 ```
+
+#### Related
+
+- [`create`](#create)
+- [`get`](#getbrpostbrpatchbrputbrdeletebrhead)
+- [`options.resource`](#resource-string)
+- [`options.params`](#params-urlsearchparams--object--string)
+- [`options.serialize`](#serialize-params-object-urlsearchparams--string)
 
 ### Extend an instance
 
@@ -188,6 +233,19 @@ await posts.post({ json: { title: 'Bye' } }).json() // → { id: 1, title: 'Bye'
 await posts.patch(0, { json: { title: 'Hey' } }).json() // → { id: 0, title: 'Hey' }
 await posts.delete(1).void() // → undefined
 ```
+
+#### Related
+
+- [`get`](#getbrpostbrpatchbrputbrdeletebrhead)
+- [`post`](#getbrpostbrpatchbrputbrdeletebrhead)
+- [`patch`](#getbrpostbrpatchbrputbrdeletebrhead)
+- [`delete`](#getbrpostbrpatchbrputbrdeletebrhead)
+- [`instance`](#returns-instance)
+- [`instance.extend`](#extend)
+- [`options.resource`](#resource-string)
+- [`options.json`](#json-unknown)
+- [`promise.json`](#json)
+- [`promise.void`](#void)
 
 ### Node.js Support
 
@@ -209,7 +267,13 @@ globalThis.FormData = FormData
 globalThis.AbortController = AbortController
 ```
 
-> ⚠️ Please, note `node-fetch` v2 may hang on large response when using `.clone()` or response type shortcuts (like `.json()`) because of smaller buffer size (16 kB). Use v3 instead and override default value of 10mb when needed with `highWaterMark` option.
+> ⚠️ Please, note `node-fetch` v2 may hang on large response when using `.clone()` or response type shortcuts (like `.json()`) because of smaller buffer size (16 kB). Use v3 instead and override default value of 10mb when needed with [`highWaterMark`](https://github.com/node-fetch/node-fetch#custom-highwatermark) option.
+>
+> ```ts
+> const instance = YF.create({
+>   highWaterMark: 1024 * 1024 * 10, // default
+> })
+> ```
 
 ## ⬆️ Jump to [Examples](#-examples)
 
@@ -233,7 +297,7 @@ import * as YF from 'ya-fetch'
 function create(options: Options): Instance
 ```
 
-Creates an instance with needed defaults. Specify parts of `resource` url, `headers`, `response` or `error` handlers, and more:
+Creates an [instance](#returns-instance) with preset default [options](#options). Specify parts of `resource` url, `headers`, `response` or `error` handlers, and more:
 
 ```ts
 const instance = YF.create({
@@ -252,7 +316,42 @@ const instance = YF.create({
 // instance.extend
 ```
 
-### extend
+#### Related
+
+- [Create an instance](#create-an-instance)
+- [`instance`](#returns-instance)
+- [`options.resource`](#resource-string)
+- [`options.headers`](#headers-headersinit)
+
+#### Returns instance
+
+```ts
+interface Instance {
+  get: (resource?: string, options?: Options): ResponsePromise
+  post: (resource?: string, options?: Options): ResponsePromise
+  patch: (resource?: string, options?: Options): ResponsePromise
+  put: (resource?: string, options?: Options): ResponsePromise
+  delete: (resource?: string, options?: Options): ResponsePromise
+  head: (resource?: string, options?: Options): ResponsePromise
+  extend(options?: Options): Instance
+}
+```
+
+Instance with preset [options](#options), and [extend](#extend) method:
+
+#### get<br>post<br>patch<br>put<br>delete<br>head
+
+```ts
+function requestMethod(resource?: string, options?: Options): ResponsePromise
+```
+
+Same as [`get`](#getbrpostbrpatchbrputbrdeletebrhead), [`post`](<(#getbrpostbrpatchbrputbrdeletebrhead)>), [`patch`](<(#getbrpostbrpatchbrputbrdeletebrhead)>), [`put`](#getbrpostbrpatchbrputbrdeletebrhead), [`delete`](#getbrpostbrpatchbrputbrdeletebrhead), or [`head`](#getbrpostbrpatchbrputbrdeletebrhead) function exported from the module, but with preset [options](#options).
+
+#### extend
+
+```ts
+function extend(options?: Options): Instance
+```
 
 Take an instance and extend it with additional options, the [`headers`](#headers-headersinit) and [`params`](#params-urlsearchparams--object--string) will be merged with values provided in parent instance, the [`resource`](#resource-string) will concatenated to the parent value.
 
@@ -272,16 +371,19 @@ const extension = instance.extend({
 await extension.post(1)
 ```
 
-#### Related
+##### Related
 
-- [Create instance](#create-instance)
-- [Set options dynamically](#set-options-dynamically)
-- [Provide custom search params serializer](#provide-custom-search-params-serializer)
+- [Create an instance](#create-an-instance)
+- [Extend an instance](#extend-an-instance)
+- [`create`](#create)
+- [`post`](#getbrpostbrpatchbrputbrdeletebrhead)
+- [`options.resource`](#resource-string)
+- [`options.headers`](#headers-headersinit)
 
 ### get<br>post<br>patch<br>put<br>delete<br>head
 
 ```ts
-function (resource?: string, options?: Options): ResponsePromise
+function requestMethod(resource?: string, options?: Options): ResponsePromise
 ```
 
 Calls `fetch` with preset request method and options:
@@ -299,9 +401,34 @@ await instance.get('/posts').json()
 // → [{ id: 0, title: 'Hello' }, ...]
 ```
 
-#### Returns `ResponsePromise` with exposed body methods:
+#### Related
 
-#### → json\<T>(): Promise\<T>
+- [Create and instance](#create-an-instance)
+- [Send & receive JSON](#send--receive-json)
+- [`create`](#create)
+- [`options.resource`](#resource-string)
+- [`promise.json`](#json)
+
+#### Returns response promise
+
+```ts
+interface ResponsePromise extends Promise<Response> {
+  json<T>(): Promise<T>
+  text(): Promise<string>
+  blob(): Promise<Blob>
+  arrayBuffer(): Promise<ArrayBuffer>
+  formData(): Promise<FormData>
+  void(): Promise<void>
+}
+```
+
+`ResponsePromise` is a promise based object with exposed body methods:
+
+#### json
+
+```ts
+function json<T>(): Promise<T>
+```
 
 Sets `Accept: 'application/json'` in `headers` and parses the `body` as JSON:
 
@@ -335,7 +462,15 @@ if (response.ok) {
 
 </details>
 
-#### → text(): Promise\<string>
+##### Related
+
+- [Send & receive JSON](#send--receive-json)
+
+#### text
+
+```ts
+function text(): Promise<string>
+```
 
 Sets `Accept: 'text/*'` in `headers` and parses the `body` as plain text:
 
@@ -358,7 +493,11 @@ if (response.ok) {
 
 </details>
 
-#### → formData(): Promise\<FormData>
+#### formData
+
+```ts
+function formData(): Promise<FormData>
+```
 
 Sets `Accept: 'multipart/form-data'` in `headers` and parses the `body` as [FormData](https://developer.mozilla.org/en-US/docs/Web/API/FormData):
 
@@ -396,7 +535,11 @@ if (response.ok) {
 
 </details>
 
-#### → arrayBuffer(): Promise\<ArrayBuffer>
+#### arrayBuffer
+
+```ts
+function arrayBuffer(): Promise<ArrayBuffer>
+```
 
 Sets `Accept: '*/*'` in `headers` and parses the `body` as [ArrayBuffer](http://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer):
 
@@ -430,7 +573,11 @@ if (response.ok) {
 
 </details>
 
-#### → blob(): Promise\<Blob>
+#### blob
+
+```ts
+function blob(): Promise<Blob>
+```
 
 Sets `Accept: '*/*'` in `headers` and parses the `body` as [Blob](http://developer.mozilla.org/en-US/docs/Web/API/Blob):
 
@@ -458,7 +605,11 @@ if (response.ok) {
 
 </details>
 
-#### → void(): Promise\<void>
+#### void
+
+```ts
+function void(): Promise<void>
+```
 
 Sets `Accept: '*/*'` in `headers` and returns [`undefined`](http://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/undefined) after the request:
 
@@ -522,6 +673,15 @@ const posts = instance.extend({
 await posts.get()
 ```
 
+##### Related
+
+- [Create and instance](#create-an-instance)
+- [Extend and instance](#extend-an-instance)
+- [`create`](#create)
+- [`get`](#getbrpostbrpatchbrputbrdeletebrhead)
+- [`instance`](#returns-instance)
+- [`instance.extend`](#extend)
+
 #### headers?: HeadersInit
 
 Request headers, the same as in [Fetch](http://developer.mozilla.org/en-US/docs/Web/API/Fetch_API), except multiple `headers` will merge when you [extend](#extend) an instance.
@@ -543,6 +703,15 @@ const authorized = instance.extend({
 await authorized.post('https://jsonplaceholder.typicode.com/posts')
 ```
 
+##### Related
+
+- [Create and instance](#create-an-instance)
+- [Extend and instance](#extend-an-instance)
+- [`create`](#create)
+- [`get`](#getbrpostbrpatchbrputbrdeletebrhead)
+- [`post`](#getbrpostbrpatchbrputbrdeletebrhead)
+- [`instance.extend`](#extend)
+
 #### json?: unknown
 
 Body for `application/json` type requests, stringified with `JSON.stringify` and applies needed headers automatically.
@@ -550,6 +719,11 @@ Body for `application/json` type requests, stringified with `JSON.stringify` and
 ```ts
 await instance.patch('/posts/1', { json: { title: 'Hey' } })
 ```
+
+##### Related
+
+- [Send & receive JSON](#send--receive-json)
+- [`patch`](#getbrpostbrpatchbrputbrdeletebrhead)
 
 #### params?: URLSearchParams | object | string
 
@@ -559,6 +733,11 @@ Search params to append to the request URL. Provide an `object`, `string`, or `U
 // request will be sent to 'https://jsonplaceholder.typicode.com/posts?userId=1'
 await instance.get('/posts', { params: { userId: 1 } })
 ```
+
+##### Related
+
+- [Set search params](#set-search-params)
+- [`get`](#getbrpostbrpatchbrputbrdeletebrhead)
 
 #### serialize?: (params: object): URLSearchParams | string
 
@@ -579,6 +758,15 @@ const instance = YF.create({
 await instance.get('/posts', { params: { userId: 1, tags: [1, 2] } })
 ```
 
+##### Related
+
+- [Create an instance](#create-an-instance)
+- [Set search params](#set-search-params)
+- [`create`](#create)
+- [`get`](#getbrpostbrpatchbrputbrdeletebrhead)
+- [`options.resource`](#resource-string)
+- [`options.params`](#params-urlsearchparams--object--string)
+
 #### timeout?: number
 
 If specified, `TimeoutError` will be thrown and the request will be cancelled after the specified duration.
@@ -593,15 +781,19 @@ try {
 }
 ```
 
-#### onRequest?(options: RequestOptions): Promise\<void> | void
+#### onRequest?(url: URL, options: RequestOptions): Promise\<void> | void
 
-Request handler. Use the callback to modify options before the request or cancel the request. Please, note the options here are in the final state before the request will be made, this means `resource` is string, `params` is instance of `URLSearchParams`, and `headers` is instance of `Headers`.
+Request handler. Use the callback to modify options before the request or cancel it. Please, note the options here are in the final state before the request will be made. It means `url` is a final instance of [`URL`](http://developer.mozilla.org/en-US/docs/Web/API/URL) with search params already set, `params` is an instance of [`URLSearchParams`](http://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams), and `headers` is an instance of [`Headers`](http://developer.mozilla.org/en-US/docs/Web/API/Headers).
 
 ```ts
+let token
 const authorized = instance.extend({
-  async onRequest(options) {
-    // fetch 'token' somehow
-    options.headers.set('Authorization', `Bearer ${await 'token'}`)
+  async onRequest(url, options) {
+    if (!token) {
+      throw new Error('Unauthorized request')
+    }
+
+    options.headers.set('Authorization', `Bearer ${token}`)
   },
 })
 
@@ -611,8 +803,8 @@ await authorized.get('/posts')
 
 ```ts
 const cancellable = instance.extend({
-  onRequest(options) {
-    if (options.resource.endsWith('/posts')) {
+  onRequest(url, options) {
+    if (url.pathname.startsWith('/posts')) {
       // cancels the request if condition is met
       options.signal = AbortSignal.abort()
     }
@@ -622,6 +814,13 @@ const cancellable = instance.extend({
 // will be cancelled
 await cancellable.get('/posts')
 ```
+
+##### Related
+
+- [Set options dynamically](#set-options-dynamically)
+- [`get`](#getbrpostbrpatchbrputbrdeletebrhead)
+- [`instance.extend`](#extend)
+- [`options.headers`](#headers-headersinit)
 
 #### onResponse?(response: Response): Promise\<Response> | Response
 
@@ -639,6 +838,11 @@ const instance = YF.create({
   },
 })
 ```
+
+##### Related
+
+- [Create an instance](#create-an-instance)
+- [`create`](#create)
 
 #### onSuccess?(response: Response): Promise\<Response> | Response
 
@@ -687,7 +891,7 @@ const api = YF.create({
 
 #### onJSON(input: unknown): unknown
 
-Customize global handling of the [json](#→-jsont-promiset) body. Useful for the cases when all the BE json responses inside the same shape object with `.data`.
+Customize global handling of the [json](#json) body. Useful for the cases when all the BE json responses inside the same shape object with `.data`.
 
 ```js
 const api = YF.create({
