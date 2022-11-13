@@ -926,7 +926,7 @@ Instance of [`Error`](http://developer.mozilla.org/en-US/docs/Web/JavaScript/Ref
 try {
   await instance.get('/posts').json()
 } catch (error) {
-  if (error instanceof ResponseError) {
+  if (error instanceof YF.ResponseError) {
     error.response.status // property on Response
     error.response.options // the same as options used to create instance and make a request
   }
@@ -941,7 +941,7 @@ Instance of [`Error` ](http://developer.mozilla.org/en-US/docs/Web/JavaScript/Re
 try {
   await api.get('/posts', { timeout: 300 }).json()
 } catch (error) {
-  if (error instanceof TimeoutError) {
+  if (error instanceof YF.TimeoutError) {
     // do something, or nothing
   }
 }
