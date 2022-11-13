@@ -1,5 +1,4 @@
-interface SearchParams
-  extends Record<string, string | number | Array<string | number>> {}
+interface SearchParams extends Record<string, any> {}
 
 interface Payload {
   json?: unknown
@@ -109,7 +108,7 @@ interface RequestOptions<P extends Payload>
 interface Options<P extends Payload = Payload>
   extends Partial<RequiredOptions<P>> {}
 
-interface Instance<P extends Payload> {
+interface Instance<P extends Payload = Payload> {
   get: RequestMethod<P>
   post: RequestMethod<P>
   patch: RequestMethod<P>
@@ -147,9 +146,9 @@ function defaultSerialize(input: SearchParams): URLSearchParams {
   for (const key of Object.keys(input)) {
     if (Array.isArray(input[key])) {
       // @ts-expect-error checked the variable inside if statement
-      input[key].forEach((item) => params.append(key, item as string))
+      input[key].forEach((item) => params.append(key, item))
     } else {
-      params.append(key, input[key] as string)
+      params.append(key, input[key])
     }
   }
 
