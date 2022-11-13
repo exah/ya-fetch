@@ -21,7 +21,10 @@
 $ npm install --save ya-fetch
 ```
 
-## ⬇️ Jump to [API docs](#-api)
+## ⬇️ Jump to
+
+- [📖 API](#-api)
+- [🔧 Options](#-options)
 
 ## 👀 Examples
 
@@ -275,7 +278,10 @@ globalThis.AbortController = AbortController
 > })
 > ```
 
-## ⬆️ Jump to [Examples](#-examples)
+## ↕️ Jump to
+
+- [👀 Examples](#-examples)
+- [🔧 Options](#-options)
 
 ## 📖 API
 
@@ -297,7 +303,7 @@ import * as YF from 'ya-fetch'
 function create(options: Options): Instance
 ```
 
-Creates an [instance](#returns-instance) with preset default [options](#options). Specify parts of `resource` url, `headers`, `response` or `error` handlers, and more:
+Creates an [instance](#returns-instance) with preset default [options](#-options). Specify parts of `resource` url, `headers`, `response` or `error` handlers, and more:
 
 ```ts
 const instance = YF.create({
@@ -337,7 +343,7 @@ interface Instance {
 }
 ```
 
-Instance with preset [options](#options), and [extend](#extend) method:
+Instance with preset [options](#-options), and [extend](#extend) method:
 
 #### get<br>post<br>patch<br>put<br>delete<br>head
 
@@ -345,7 +351,7 @@ Instance with preset [options](#options), and [extend](#extend) method:
 function requestMethod(resource?: string, options?: Options): ResponsePromise
 ```
 
-Same as [`get`](#getbrpostbrpatchbrputbrdeletebrhead), [`post`](<(#getbrpostbrpatchbrputbrdeletebrhead)>), [`patch`](<(#getbrpostbrpatchbrputbrdeletebrhead)>), [`put`](#getbrpostbrpatchbrputbrdeletebrhead), [`delete`](#getbrpostbrpatchbrputbrdeletebrhead), or [`head`](#getbrpostbrpatchbrputbrdeletebrhead) function exported from the module, but with preset [options](#options).
+Same as [`get`](#getbrpostbrpatchbrputbrdeletebrhead), [`post`](<(#getbrpostbrpatchbrputbrdeletebrhead)>), [`patch`](<(#getbrpostbrpatchbrputbrdeletebrhead)>), [`put`](#getbrpostbrpatchbrputbrdeletebrhead), [`delete`](#getbrpostbrpatchbrputbrdeletebrhead), or [`head`](#getbrpostbrpatchbrputbrdeletebrhead) function exported from the module, but with preset [options](#-options).
 
 #### extend
 
@@ -634,7 +640,12 @@ if (response.ok) {
 
 </details>
 
-### options
+## ⬆️ Jump to
+
+- [👀 Examples](#-examples)
+- [📖 API](#-api)
+
+## 🔧 Options
 
 Accepts all the options from native [fetch](http://developer.mozilla.org/en-US/docs/Web/API/fetch#parameters) in the desktop browsers, or [`node-fetch`](https://github.com/node-fetch/node-fetch#options) in node.js. Additionally you can specify:
 
