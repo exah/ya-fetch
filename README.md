@@ -70,7 +70,7 @@ fetch('http://example.com/posts', {
 
 - [`post`](#getbrpostbrpatchbrputbrdeletebrhead)
 - [`options.json`](#json-unknown)
-- [`promise.json`](#json)
+- [`response.json`](#json)
 
 ### Set search params
 
@@ -97,7 +97,7 @@ fetch('http://example.com/posts?id=1').then((res) => {
 - [`get`](#getbrpostbrpatchbrputbrdeletebrhead)
 - [`options.params`](#params-urlsearchparams--object--string)
 - [`options.serialize`](#serialize-params-object-urlsearchparams--string)
-- [`promise.json`](#json)
+- [`response.json`](#json)
 
 ### Set options dynamically
 
@@ -192,7 +192,7 @@ fetch('http://example.com/posts', {
 
 - [`get`](#getbrpostbrpatchbrputbrdeletebrhead)
 - [`options.timeout`](#timeout-number)
-- [`promise.json`](#json)
+- [`response.json`](#json)
 
 ### Provide custom search params serializer
 
@@ -244,8 +244,8 @@ await posts.delete(1).void() // → undefined
 - [`instance.extend`](#extend)
 - [`options.resource`](#resource-string)
 - [`options.json`](#json-unknown)
-- [`promise.json`](#json)
-- [`promise.void`](#void)
+- [`response.json`](#json)
+- [`response.void`](#void)
 
 ### Node.js Support
 
@@ -407,7 +407,7 @@ await instance.get('/posts').json()
 - [Send & receive JSON](#send--receive-json)
 - [`create`](#create)
 - [`options.resource`](#resource-string)
-- [`promise.json`](#json)
+- [`response.json`](#json)
 
 #### Returns response promise
 
