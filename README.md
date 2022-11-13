@@ -25,58 +25,17 @@ $ npm install --save ya-fetch
 
 ## 👀 Examples
 
-### Make a request
+### Create an instance
 
 ```js
 import * as YF from 'ya-fetch'
 
-await YF.patch('https://jsonplaceholder.typicode.com/posts/1', {
-  json: {
-    title: 'New Title',
-  },
-}).json()
-
-// → { id: 1, title: 'New Title', ... }
+const api = YF.create({ resource: 'https://jsonplaceholder.typicode.com' })
 ```
-
-### Create instance
-
-```js
-// api.js
-import * as YF from 'ya-fetch'
-
-export const api = YF.create({
-  resource: 'https://jsonplaceholder.typicode.com',
-})
-```
-
-### Set search params
-
-```js
-import { api } from './api'
-
-await api.get('/posts', { params: { userId: 1 } }).json()
-```
-
-<details><summary>Same code with native <code>fetch</code></summary>
-
-```js
-fetch('http://example.com/posts?id=1').then((res) => {
-  if (res.ok) {
-    return res.json()
-  }
-
-  throw new Error('Oops')
-})
-```
-
-</details>
 
 ### Send & receive JSON
 
 ```js
-import { api } from './api'
-
 await api.post('/posts', { json: { title: 'New Post' } }).json()
 ```
 
@@ -101,16 +60,35 @@ fetch('http://example.com/posts', {
 
 </details>
 
+### Set search params
+
+```js
+await api.get('/posts', { params: { userId: 1 } }).json()
+```
+
+<details><summary>Same code with native <code>fetch</code></summary>
+
+```js
+fetch('http://example.com/posts?id=1').then((res) => {
+  if (res.ok) {
+    return res.json()
+  }
+
+  throw new Error('Oops')
+})
+```
+
+</details>
+
 ### Set options dynamically
 
 You can use an async or regular function to modify the options before the request.
 
 ```js
-// api.js
 import * as YF from 'ya-fetch'
 import { getToken } from './global-state'
 
-export const api = YF.create({
+const api = YF.create({
   resource: 'https://jsonplaceholder.typicode.com',
   async onRequest(options) {
     options.headers.set('Authorization', `Bearer ${await getToken()}`)
@@ -129,21 +107,20 @@ body.set('title', 'My Title')
 body.set('image', myFile, 'image.jpg')
 
 // will send 'Content-type': 'multipart/form-data' request
-await api.post('/posts', { body }).void() // → undefined
+await api.post('/posts', { body })
 ```
 
-### Timeout
+### Set timeout
 
 Cancel request if it is not fulfilled in period of time.
 
 ```js
-import { TimeoutError } from 'ya-fetch'
-import { api } from './api'
+import * as YF from 'ya-fetch'
 
 try {
   await api.get('/posts', { timeout: 300 }).json()
 } catch (error) {
-  if (error instanceof TimeoutError) {
+  if (error instanceof YF.TimeoutError) {
     // do something, or nothing
   }
 }
@@ -203,11 +180,7 @@ await api.get('/posts', { params: { userId: 1, tags: [1, 2] } })
 It's also possible to create extended version of existing by providing additional options. In this example the new instance will have `https://jsonplaceholder.typicode.com/posts` as `resource` inside the extended options:
 
 ```js
-import { api } from './api'
-
-const posts = api.extend({
-  resource: '/posts',
-})
+const posts = api.extend({ resource: '/posts' })
 
 await posts.get().json() // → [{ id: 0, title: 'Hello' }, ...]
 await posts.get(0).json() // → { id: 0, title: 'Hello' }
@@ -512,7 +485,7 @@ if (response.ok) {
 
 ### options
 
-Accepts all the options from native [fetch](http://developer.mozilla.org/en-US/docs/Web/API/fetch#parameters) in the desktop browsers, or [`node-fetch`](https://github.com/node-fetch/node-fetch#options) in node.js. Additionally you can specify the options:
+Accepts all the options from native [fetch](http://developer.mozilla.org/en-US/docs/Web/API/fetch#parameters) in the desktop browsers, or [`node-fetch`](https://github.com/node-fetch/node-fetch#options) in node.js. Additionally you can specify:
 
 - [resource](#resource-string)
 - [headers](#headers-headersinit)
@@ -520,9 +493,6 @@ Accepts all the options from native [fetch](http://developer.mozilla.org/en-US/d
 - [params](#params-urlsearchparams--object--string)
 - [serialize](#serialize-params-object-urlsearchparams--string)
 - [timeout](#timeout-number)
-
-And global hooks:
-
 - [onRequest](#onrequestoptions-requestoptions-promisevoid--void)
 - [onResponse](#onresponseresponse-response-promiseresponse--response)
 - [onSuccess](#onsuccessresponse-response-promiseresponse--response)
