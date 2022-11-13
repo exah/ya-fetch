@@ -958,13 +958,35 @@ try {
 
 ## 🔥 Migration from v1 → v2
 
+### Renamed `prefixUrl` → [`resource`](#resource-string)
+
+```diff
+- const api = YF.create({ prefixUrl: 'https://example.com' })
++ const api = YF.create({ resource: 'https://example.com' })
+```
+
+### Remove `getHeaders` use [`onRequest`](#onrequesturl-url-options-requestoptions-promisevoid--void) instead
+
+```diff
+const api = YF.create({
+-  async getHeaders(url, options) {
+-    return {
+-      Authorization: `Bearer ${await getToken()}`,
+-    }
+-  },
++  async onRequest(url, options) {
++    options.headers.set('Authorization', `Bearer ${await getToken()}`)
++  },
+})
+```
+
 ### CommonJS module format support dropped
 
 Use dynamic `import` inside CommonJS project instead of `require` (or transpile the module with webpack/rollup, or vite):
 
 ```diff
--const YF = require('ya-fetch')
-+import('ya-fetch').then((YF) => { /* do something */ })
+- const YF = require('ya-fetch')
++ import('ya-fetch').then((YF) => { /* do something */ })
 ```
 
 ### Module exports changed
@@ -972,25 +994,30 @@ Use dynamic `import` inside CommonJS project instead of `require` (or transpile 
 The module doesn't include a default export anymore, use namespace import instead of default:
 
 ```diff ts
--import YF from 'ya-fetch'
-+import * as YF from 'ya-fetch'
+- import YF from 'ya-fetch'
++ import * as YF from 'ya-fetch'
 ```
 
 ### Errors are own instances based on [Error](http://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error)
 
 ```diff
- import * as YF from 'ya-fetch'
+import * as YF from 'ya-fetch'
 
- try {
+try {
 -  throw YF.ResponseError(new Response()) // notice no 'new' keyword before `ResponseError`
 +  throw new ResponseError(new Response())
- } catch (error) {
--    if (YF.isResponseError(error)) {
-+    if (error instanceof ResponseError) {
+} catch (error) {
+-  if (YF.isResponseError(error)) {
++  if (error instanceof ResponseError) {
       console.log(error.response.status)
-    }
   }
+}
 ```
+
+#### Related
+
+- [`ResponseError`](#responseerror)
+- [`TimeoutError`](#timeouterror)
 
 ### Use spec compliant check for `AbortError`
 
