@@ -967,7 +967,9 @@ const api = YF.create({
 })
 ```
 
-### Remove `getHeaders` use [`onRequest`](#onrequesturl-url-options-requestoptions-promisevoid--void) instead
+### Removed `getHeaders` option
+
+Use [`onRequest`](#onrequesturl-url-options-requestoptions-promisevoid--void) instead:
 
 ```diff
 const api = YF.create({
