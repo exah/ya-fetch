@@ -335,12 +335,12 @@ const instance = YF.create({
 
 ```ts
 interface Instance {
-  get: (resource?: string, options?: Options): ResponsePromise
-  post: (resource?: string, options?: Options): ResponsePromise
-  patch: (resource?: string, options?: Options): ResponsePromise
-  put: (resource?: string, options?: Options): ResponsePromise
-  delete: (resource?: string, options?: Options): ResponsePromise
-  head: (resource?: string, options?: Options): ResponsePromise
+  get(resource?: string, options?: Options): ResponsePromise
+  post(resource?: string, options?: Options): ResponsePromise
+  patch(resource?: string, options?: Options): ResponsePromise
+  put(resource?: string, options?: Options): ResponsePromise
+  delete(resource?: string, options?: Options): ResponsePromise
+  head(resource?: string, options?: Options): ResponsePromise
   extend(options?: Options): Instance
 }
 ```
