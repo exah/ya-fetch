@@ -114,7 +114,7 @@ You can use an async or regular function to modify the options before the reques
 ```ts
 import { getToken } from './global-state'
 
-const api = YF.create({
+const authorized = YF.create({
   resource: 'https://jsonplaceholder.typicode.com',
   async onRequest(url, options) {
     options.headers.set('Authorization', `Bearer ${await getToken()}`)
@@ -153,8 +153,6 @@ await api.post('/posts', { body })
 Cancel request if it is not fulfilled in period of time.
 
 ```js
-import * as YF from 'ya-fetch'
-
 try {
   await api.get('/posts', { timeout: 300 }).json()
 } catch (error) {
