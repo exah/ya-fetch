@@ -72,7 +72,7 @@ interface RequiredOptions<P extends Payload> extends RequestInit {
    * Request handler.
    * Use the callback to modify options before the request
    */
-  onRequest(options: RequestOptions<P>): Promise<void> | void
+  onRequest(url: URL, options: RequestOptions<P>): Promise<void> | void
   /**
    * Response handler, must handle status codes or throw `ResponseError`
    */
@@ -243,7 +243,7 @@ function request<P extends Payload>(
 
     // Running fetch in next tick allow us to set headers after creating promise
     setTimeout(() =>
-      Promise.resolve(options.onRequest(options))
+      Promise.resolve(options.onRequest(url, options))
         .then(() => fetch(url, options))
         .then((response) => Object.assign(response, { options }))
         .then(resolve, reject)

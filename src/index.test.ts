@@ -325,7 +325,7 @@ describe('Response', () => {
     const scope = nock('https://example.com')
     const api = YF.create({
       resource: 'https://example.com',
-      onRequest(options) {
+      onRequest(url, options) {
         options.headers.set('Authorization', `Bearer ${token}`)
       },
     })
@@ -354,7 +354,9 @@ describe('Response', () => {
     const api = YF.create({
       resource: 'https://example.com',
       headers: { 'x-static': 'static value' },
-      async onRequest(options) {
+      async onRequest(url, options) {
+        expect(url).toBeInstanceOf(URL)
+        expect(url.toString()).toBe(options.resource)
         expect(options.resource).toMatch(/example\.com\/(users|comments)/)
         expect(options.method).toBe('GET')
         expect(options.headers.get('x-static')).toEqual('static value')
