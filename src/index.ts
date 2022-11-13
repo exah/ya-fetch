@@ -213,7 +213,11 @@ function request<P extends Payload>(
 ): ResponsePromise<P> {
   const options: RequestOptions<P> = mergeOptions(DEFAULTS, baseOptions)
   const promise = new Promise<Response<P>>((resolve, reject) => {
-    const url = new URL(options.resource)
+    const url = new URL(
+      options.resource,
+      typeof location === 'undefined' ? undefined : location.origin
+    )
+
     url.search += options.params
 
     if (options.json != null) {
