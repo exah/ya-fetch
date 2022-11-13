@@ -21,6 +21,16 @@
 $ npm install --save ya-fetch
 ```
 
+## 🌎 Import in a browser
+
+```html
+<script type="module">
+  import * as YF from 'https://unpkg.com/ya-fetch/esm/index.js'
+</script>
+```
+
+[🔗 Playground on CodePen](https://codepen.io/exah/pen/gOKRYjW?editors=0012).
+
 ## ⬇️ Jump to
 
 - [📖 API](#-api)
