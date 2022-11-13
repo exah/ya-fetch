@@ -1009,10 +1009,10 @@ import * as YF from 'ya-fetch'
 
 try {
 -  throw YF.ResponseError(new Response()) // notice no 'new' keyword before `ResponseError`
-+  throw new ResponseError(new Response())
++  throw new YF.ResponseError(new Response())
 } catch (error) {
 -  if (YF.isResponseError(error)) {
-+  if (error instanceof ResponseError) {
++  if (error instanceof YF.ResponseError) {
       console.log(error.response.status)
   }
 }
