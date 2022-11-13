@@ -644,7 +644,7 @@ Accepts all the options from native [fetch](http://developer.mozilla.org/en-US/d
 - [params](#params-urlsearchparams--object--string)
 - [serialize](#serialize-params-object-urlsearchparams--string)
 - [timeout](#timeout-number)
-- [onRequest](#onrequestoptions-requestoptions-promisevoid--void)
+- [onRequest](#onrequesturl-url-options-requestoptions-promisevoid--void)
 - [onResponse](#onresponseresponse-response-promiseresponse--response)
 - [onSuccess](#onsuccessresponse-response-promiseresponse--response)
 - [onFailure](#onfailureerror-responseerror--timeouterror--error-promiseresponse--response)
