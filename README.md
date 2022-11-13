@@ -21,7 +21,7 @@
 $ npm install --save ya-fetch
 ```
 
-## ⬇️ Jump to [API docs](#📖-api)
+## ⬇️ Jump to [API docs](#-api)
 
 ## 👀 Examples
 
@@ -238,7 +238,7 @@ globalThis.AbortController = AbortController
 
 > ⚠️ Please, note `node-fetch` v2 may hang on large response when using `.clone()` or response type shortcuts (like `.json()`) because of smaller buffer size (16 kB). Use v3 instead and override default value of 10mb when needed with `highWaterMark` option.
 
-## ⬆️ Jump to [Examples](#👀-examples)
+## ⬆️ Jump to [Examples](#-examples)
 
 ## 📖 API
 
