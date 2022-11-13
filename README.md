@@ -25,6 +25,7 @@ $ npm install --save ya-fetch
 
 - [📖 API](#-api)
 - [🔧 Options](#-options)
+- [🔥 Migration from v1 → v2](#-migration-from-v1--v2)
 
 ## 👀 Examples
 
@@ -282,6 +283,7 @@ globalThis.AbortController = AbortController
 
 - [👀 Examples](#-examples)
 - [🔧 Options](#-options)
+- [🔥 Migration from v1 → v2](#-migration-from-v1--v2)
 
 ## 📖 API
 
@@ -640,10 +642,11 @@ if (response.ok) {
 
 </details>
 
-## ⬆️ Jump to
+## ↕️ Jump to
 
 - [👀 Examples](#-examples)
 - [📖 API](#-api)
+- [🔥 Migration from v1 → v2](#-migration-from-v1--v2)
 
 ## 🔧 Options
 
@@ -946,6 +949,86 @@ try {
   }
 }
 ```
+
+## ⬆️ Jump to
+
+- [👀 Examples](#-examples)
+- [📖 API](#-api)
+- [🔧 Options](#-options)
+
+## 🔥 Migration from v1 → v2
+
+### CommonJS module format support dropped
+
+Use dynamic `import` inside CommonJS project instead of `require` (or transpile the module with webpack/rollup, or vite):
+
+```diff
+-const YF = require('ya-fetch')
++import('ya-fetch').then((YF) => { /* do something */ })
+```
+
+### Module exports changed
+
+The module doesn't include a default export anymore, use namespace import instead of default:
+
+```diff ts
+-import YF from 'ya-fetch'
++import * as YF from 'ya-fetch'
+```
+
+### Errors are own instances based on [Error](http://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error)
+
+```diff
+ import * as YF from 'ya-fetch'
+
+ try {
+-  throw YF.ResponseError(new Response()) // notice no 'new' keyword before `ResponseError`
++  throw new ResponseError(new Response())
+ } catch (error) {
+-    if (YF.isResponseError(error)) {
++    if (error instanceof ResponseError) {
+      console.log(error.response.status)
+    }
+  }
+```
+
+### Use spec compliant check for `AbortError`
+
+There is no globally available `AbortError` but you can check `.name` property on `Error`:
+
+```ts
+try {
+  await YF.get('https://jsonplaceholder.typicode.com/posts', {
+    signal: AbortSignal.abort(),
+  })
+} catch (error) {
+  if (error instanceof Error && error.name === 'AbortError') {
+    /* do something or nothing */
+  }
+}
+```
+
+If you use `ya-fetch` only in [Node.js](https://nodejs.org/en/) environment, then you can import `AbortError` class from [node-fetch](https://github.com/node-fetch/node-fetch#class-aborterror) module and check the error:
+
+```ts
+import { AbortError } from 'node-fetch'
+
+try {
+  await YF.get('https://jsonplaceholder.typicode.com/posts', {
+    signal: AbortSignal.abort(),
+  })
+} catch (error) {
+  if (error instanceof AbortError) {
+    /* do something or nothing */
+  }
+}
+```
+
+### Removed exports
+
+- `isResponseError`
+- `isTimeoutError`
+- `isAbortError`
 
 ---
 
