@@ -1,6 +1,6 @@
 {
   "name": "ya-fetch",
-  "version": "2.0.0-0",
+  "version": "2.0.0-1",
   "description": "Super light-weight wrapper around fetch",
   "author": "John Grishin <hi@johngrish.in>",
   "license": "MIT",
