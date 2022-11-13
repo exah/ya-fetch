@@ -735,7 +735,7 @@ const api = YF.create({
 
 ### ResponseError
 
-Instance of [`Error` ](http://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error) with failed `YF.Response` (based on [Response](http://developer.mozilla.org/en-US/docs/Web/API/Response/Response)) inside `.response`:
+Instance of [`Error`](http://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error) with failed `YF.Response` (based on [Response](http://developer.mozilla.org/en-US/docs/Web/API/Response/Response)) inside `.response`:
 
 ```ts
 try {
@@ -749,6 +749,8 @@ try {
 ```
 
 ### TimeoutError
+
+Instance of [`Error` ](http://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error) thrown when [timeout](#timeout-number) is reached before finishing the request:
 
 ```ts
 try {
