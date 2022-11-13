@@ -7,7 +7,7 @@
 - [x] Only 1 kB when minified & gziped
 - [x] Based on [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) & [AbortController](https://developer.mozilla.org/en-US/docs/Web/API/AbortController)
 - [x] Custom [instance](#create) with options (`headers`, `error` handlers, ...)
-- [x] Exposed response body [methods](#response-methods) (`.json`, `.blob`, ...)
+- [x] Exposed response body [methods](#returns-response-promise) (`.json`, `.blob`, ...)
 - [x] First-class [JSON support](#send--receive-json) (automatic serialization, content type headers)
 - [x] [Search params](#params-urlsearchparams--object--string) serialization
 - [x] Global [timeouts](#timeout-number)
