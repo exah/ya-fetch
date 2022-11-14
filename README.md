@@ -1,7 +1,5 @@
 <h1 align="center">ya-fetch</h1>
 
-[![](https://flat.badgen.net/bundlephobia/minzip/ya-fetch)](https://bundlephobia.com/result?p=ya-fetch)
-
 > Super light-weight wrapper around `fetch`
 
 - [x] Only 1 kB when minified & gziped
@@ -11,6 +9,7 @@
 - [x] First-class [JSON support](#send--receive-json) (automatic serialization, content type headers)
 - [x] [Search params](#params-urlsearchparams--object--string) serialization
 - [x] Global [timeouts](#timeout-number)
+- [x] [Works in a browser](#-import-in-a-browser) without a bundler
 - [x] Written in TypeScript
 - [x] Pure ESM module
 - [x] Zero deps
@@ -25,9 +24,11 @@ $ npm install --save ya-fetch
 
 ```html
 <script type="module">
-  import * as YF from 'https://unpkg.com/ya-fetch/esm/index.js'
+  import * as YF from 'https://unpkg.com/ya-fetch/esm/min.js'
 </script>
 ```
+
+For readable version import from `https://unpkg.com/ya-fetch/esm/index.js`.
 
 [🔗 Playground on CodePen](https://codepen.io/exah/pen/gOKRYjW?editors=0012).
 
@@ -42,7 +43,7 @@ $ npm install --save ya-fetch
 ### Import module
 
 ```ts
-import * as YF from 'ya-fetch'
+import * as YF from 'ya-fetch' // or from 'https://unpkg.com/ya-fetch/esm/min.js' in browsers
 ```
 
 ### Create an instance
@@ -378,13 +379,13 @@ const instance = YF.create({
 })
 
 // will have combined `resource` and merged `headers`
-const extension = instance.extend({
+const extended = instance.extend({
   resource: '/posts'
   headers: { 'X-Something-Else': 'Bar' },
 })
 
 // will send request to: 'https://jsonplaceholder.typicode.com/posts/1'
-await extension.post(1)
+await extended.post(1, { json: { title: 'Hello' } })
 ```
 
 ##### Related
@@ -691,7 +692,7 @@ const posts = instance.extend({
 })
 
 // will send request to 'https://jsonplaceholder.typicode.com/posts'
-await posts.get()
+const result = await posts.get().json() // → [{ id: 0, title: 'Title', ... }]
 ```
 
 ##### Related
