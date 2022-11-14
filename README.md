@@ -263,22 +263,20 @@ await posts.delete(1).void() // → undefined
 
 ### Node.js Support
 
-Install [`node-fetch`](https://github.com/node-fetch/node-fetch), [`abort-controller`](https://github.com/mysticatea/abort-controller) packages and setup them as globally available variables.
+Install [`node-fetch`](https://github.com/node-fetch/node-fetch) and setup it as globally available variable.
 
 ```sh
-yarn add node-fetch abort-controller
+npm install --save node-fetch
 ```
 
 ```js
 import fetch, { Headers, Request, Response, FormData } from 'node-fetch'
-import AbortController from 'abort-controller'
 
 globalThis.fetch = fetch
 globalThis.Headers = Headers
 globalThis.Request = Request
 globalThis.Response = Response
 globalThis.FormData = FormData
-globalThis.AbortController = AbortController
 ```
 
 > ⚠️ Please, note `node-fetch` v2 may hang on large response when using `.clone()` or response type shortcuts (like `.json()`) because of smaller buffer size (16 kB). Use v3 instead and override default value of 10mb when needed with [`highWaterMark`](https://github.com/node-fetch/node-fetch#custom-highwatermark) option.
@@ -632,8 +630,7 @@ function void(): Promise<void>
 Sets `Accept: '*/*'` in `headers` and returns [`undefined`](http://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/undefined) after the request:
 
 ```ts
-await instance.post('/posts', { title: 'Hello' })
-// do something
+const nothing = await instance.post('/posts', { title: 'Hello' }).void()
 ```
 
 <details><summary>Same code with native <code>fetch</code></summary>
