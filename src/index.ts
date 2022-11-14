@@ -47,19 +47,18 @@ interface RequiredOptions<P extends Payload> extends RequestInit {
    */
   json?: P['json']
   /**
-   * Search params to append to the request URL.
-   * Provide an `object`, `string`, or `URLSearchParams` instance.
+   * Search params to append to a request URL.
    */
   params?: P['params']
   /**
-   * Custom search params serializer when `object` is used.
+   * Custom search params serializer when `object` passed to `params`.
    * Defaults to internal implementation based on `URLSearchParams`
    * with better handling of array values.
    */
   serialize?: Serialize
   /**
-   * If specified `TimeoutError` will be thrown and
-   * the request will be cancelled after the specified duration.
+   * If specified `TimeoutError` will be thrown and the request will be
+   * cancelled after a specified duration.
    */
   timeout?: number
   /**
@@ -68,8 +67,7 @@ interface RequiredOptions<P extends Payload> extends RequestInit {
    */
   highWaterMark?: number
   /**
-   * Request handler.
-   * Use the callback to modify options before the request
+   * Use the callback to modify options before a request
    */
   onRequest(url: URL, options: RequestOptions<P>): Promise<void> | void
   /**
@@ -78,13 +76,11 @@ interface RequiredOptions<P extends Payload> extends RequestInit {
   onResponse(response: Response<P>): Promise<Response<P>> | Response<P>
   /**
    * Success response handler (usually codes 200-299).
-   * @see onResponse
    */
   onSuccess?(response: Response<P>): Promise<Response<P>> | Response<P>
   /**
-   * Error handler.
-   * Throw custom error, or return a new `Promise` with `Response` using `request`.
-   * @see onResponse
+   * Instance error handler. Use it to throw custom errors
+   * or to send information to error tracking service.
    */
   onFailure?(
     error: ResponseError<P> | TimeoutError | Error
