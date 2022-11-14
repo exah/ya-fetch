@@ -3,7 +3,8 @@
   "compilerOptions": {
     "rootDir": "./src",
     "outDir": "./esm",
-    "module": "Node16"
+    "module": "Node16",
+    "removeComments": true
   },
   "include": ["src"]
 }
