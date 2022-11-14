@@ -6,6 +6,5 @@
     "declarationDir": "./types",
     "emitDeclarationOnly": true
   },
-  "include": ["src/*.ts"],
-  "exclude": ["node_modules", "**/*.test.ts"]
+  "include": ["src"]
 }
