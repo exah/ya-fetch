@@ -3,6 +3,6 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
   test: {
     watch: false,
-    setupFiles: ['./test.setup.mjs'],
+    setupFiles: ['./tests/setup.js'],
   },
 })

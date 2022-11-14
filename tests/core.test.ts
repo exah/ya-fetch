@@ -1,7 +1,7 @@
 import { afterEach, describe, test, expect } from 'vitest'
 import nock from 'nock'
 import queryString from 'query-string'
-import * as YF from './index.js'
+import * as YF from '../src/index.js'
 
 afterEach(() => nock.cleanAll())
 
@@ -781,20 +781,18 @@ describe('Methods', () => {
   })
 })
 
-describe('void', () => {
-  test('receive voided response', async () => {
-    const scope = nock('http://localhost')
-      .get('/comments')
-      .reply(200, [1, 2, 3, 4])
+test('receive voided response', async () => {
+  const scope = nock('http://localhost')
+    .get('/comments')
+    .reply(200, [1, 2, 3, 4])
 
-    const result = await YF.get('http://localhost/comments').void()
+  const result = await YF.get('http://localhost/comments').void()
 
-    expect(result).toEqual(undefined)
-    scope.done()
-  })
+  expect(result).toEqual(undefined)
+  scope.done()
 })
 
-test('serialize', () => {
+test('default serialize', () => {
   const result = YF.serialize({
     number: 0,
     string: 'text',
@@ -808,4 +806,17 @@ test('serialize', () => {
   expect(params.getAll('number')).toEqual(['0'])
   expect(params.getAll('string')).toEqual(['text'])
   expect(params.getAll('array')).toEqual(['1', 'two', '3'])
+})
+
+test('change base', async () => {
+  const scope = nock('http://example.com').get('/foo').reply(200)
+  await YF.get('/foo', { base: 'http://example.com' })
+
+  scope.done()
+})
+
+test('throw if no base', async () => {
+  await expect(YF.get('/foo')).rejects.toThrowError(
+    new TypeError('Invalid URL')
+  )
 })

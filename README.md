@@ -661,6 +661,7 @@ if (response.ok) {
 Accepts all the options from native [fetch](http://developer.mozilla.org/en-US/docs/Web/API/fetch#parameters) in the desktop browsers, or [`node-fetch`](https://github.com/node-fetch/node-fetch#options) in node.js. Additionally you can specify:
 
 - [resource](#resource-string)
+- [base](#base-string)
 - [headers](#headers-headersinit)
 - [json](#json-unknown)
 - [params](#params-urlsearchparams--object--string)
@@ -703,6 +704,27 @@ const result = await posts.get().json() // → [{ id: 0, title: 'Title', ... }]
 - [`get`](#getbrpostbrpatchbrputbrdeletebrhead)
 - [`instance`](#returns-instance)
 - [`instance.extend`](#extend)
+
+#### base?: string
+
+Base of a [URL](http://developer.mozilla.org/en-US/docs/Web/API/URL), use it only if you want to specify relative url inside [resource](#resource-string). By default equals to `location.origin` if available. Not merged when you [extend](#extend) an instance. Most of the time use [resource](#resource-string) option instead.
+
+```ts
+// send a request to `new URL('/posts', location.origin)` if possible
+await YF.get('/posts')
+
+// send a request to `https://jsonplaceholder.typicode.com/posts`
+await YF.get('https://jsonplaceholder.typicode.com/posts')
+
+// send a request to `new URL('/posts', 'https://jsonplaceholder.typicode.com')`
+await YF.get('/posts', { base: 'https://jsonplaceholder.typicode.com' })
+```
+
+##### Related
+
+- [Create and instance](#create-an-instance)
+- [Extend and instance](#extend-an-instance)
+- [`options.resource`](#resource-string)
 
 #### headers?: HeadersInit
 
