@@ -1063,11 +1063,26 @@ try {
 }
 ```
 
-### Removed exports
+### Removed `options` from the second argument of `onResponse`, `onSuccess`, and `onFailure`
 
-- `isResponseError`
-- `isTimeoutError`
-- `isAbortError`
+```diff
+const api = YF.create({
+-  async onFailure(error, options) {
+-    console.log(options.headers)
+-  },
++  async onFailure(error) {
++    if (error instanceof YF.ResponseError) {
++      console.log(error.response.options.headers)
++    }
++  },
+})
+```
+
+### Removed helpers
+
+- `isResponseError` → `error instanceof YF.ResponseError`
+- `isTimeoutError` → `error instanceof YF.TimeoutError`
+- `isAbortError` → `error instanceof Error && error.name === 'AbortError'`
 
 ## 🔗 Alternatives
 
