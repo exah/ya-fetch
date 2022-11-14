@@ -33,6 +33,7 @@
     "build": "run-s build:*",
     "build:esm": "tsc -p tsconfig.esm.json",
     "build:types": "tsc -p tsconfig.types.json",
+    "build:min": "terser --module -m -c -o esm/min.js -- esm/index.js ",
     "test": "vitest",
     "lint": "eslint --ext ts --ext js src/",
     "size": "size-limit",
@@ -122,6 +123,7 @@
     "prettier": "^2.7.1",
     "query-string": "^7.1.1",
     "size-limit": "^8.1.0",
+    "terser": "^5.15.1",
     "typescript": "^4.8.4",
     "vitest": "^0.25.1"
   }
