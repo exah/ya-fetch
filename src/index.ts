@@ -22,7 +22,7 @@ interface ResponsePromise<P extends Payload = Payload>
   extends Promise<Response<P>>,
     BodyMethods {}
 
-interface Serializer {
+interface Serialize {
   (params: SearchParams): URLSearchParams | string
 }
 
@@ -56,7 +56,7 @@ interface RequiredOptions<P extends Payload> extends RequestInit {
    * Defaults to internal implementation based on `URLSearchParams`
    * with better handling of array values.
    */
-  serialize?: Serializer
+  serialize?: Serialize
   /**
    * If specified `TimeoutError` will be thrown and
    * the request will be cancelled after the specified duration.
@@ -168,7 +168,7 @@ function mergeMaps<Init, Request extends URLSearchParams | Headers>(
 }
 
 const normalizeParams = (
-  serialize: Serializer = defaultSerialize,
+  serialize: Serialize = defaultSerialize,
   params: SearchParams | URLSearchParams | string = ''
 ) =>
   typeof params === 'string' || params instanceof URLSearchParams
@@ -309,7 +309,7 @@ export {
   Response,
   ResponseError,
   TimeoutError,
-  Serializer,
+  Serialize,
   defaultSerialize as serialize,
   request,
   create,
