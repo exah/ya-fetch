@@ -35,6 +35,12 @@ interface RequestMethod<P extends Payload> {
 
 interface RequiredOptions<P extends Payload> extends RequestInit {
   /**
+   * Base of the request URL, default to `location.origin` if available.
+   * Provide a valid url if you want to use relative `resource` path
+   * when module loaded in `file://`, `about:blank` or Node.js environment.
+   */
+  base?: string
+  /**
    * Part of the request URL
    */
   resource?: string
@@ -124,6 +130,10 @@ const CONTENT_TYPES = {
 } as const
 
 const DEFAULTS: RequiredOptions<Payload> = {
+  base:
+    typeof location !== 'undefined' && location.origin !== 'null'
+      ? location.origin
+      : undefined,
   highWaterMark: 1024 * 1024 * 10, // 10mb
   onRequest: () => {},
   onResponse(result) {
@@ -208,12 +218,10 @@ function request<P extends Payload>(
   baseOptions: Options<P>
 ): ResponsePromise<P> {
   const options: RequestOptions<P> = mergeOptions(DEFAULTS, baseOptions)
-  const promise = new Promise<Response<P>>((resolve, reject) => {
-    const url = new URL(
-      options.resource,
-      typeof location === 'undefined' ? undefined : location.origin
-    )
 
+  let timerID: ReturnType<typeof setTimeout>
+  const promise = new Promise<Response<P>>((resolve, reject) => {
+    const url = new URL(options.resource, options.base)
     url.search += options.params
 
     if (options.json != null) {
@@ -221,7 +229,6 @@ function request<P extends Payload>(
       options.headers.set('content-type', CONTENT_TYPES.json)
     }
 
-    let timerID: ReturnType<typeof setTimeout>
     if (options.timeout! > 0) {
       const controller = new AbortController()
 
@@ -240,14 +247,11 @@ function request<P extends Payload>(
       options.signal = controller.signal
     }
 
-    // Running fetch in next tick allow us to set headers after creating promise
-    setTimeout(() =>
-      Promise.resolve(options.onRequest(url, options))
-        .then(() => fetch(url, options))
-        .then((response) => Object.assign(response, { options }))
-        .then(resolve, reject)
-        .then(() => clearTimeout(timerID))
-    )
+    Promise.resolve(options.onRequest(url, options))
+      .then(() => fetch(url, options))
+      .then((response) => Object.assign(response, { options }))
+      .then(resolve, reject)
+      .then(() => clearTimeout(timerID))
   })
     .then(options.onResponse)
     .then(options.onSuccess, options.onFailure) as ResponsePromise<P>
