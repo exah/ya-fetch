@@ -1,18 +1,14 @@
 {
   "name": "ya-fetch",
-  "version": "2.0.0-0",
+  "version": "2.1.0",
   "description": "Super light-weight wrapper around fetch",
   "author": "John Grishin <hi@johngrish.in>",
   "license": "MIT",
   "repository": "exah/ya-fetch",
   "sideEffects": false,
   "type": "module",
-  "exports": {
-    ".": {
-      "types": "./types/index.d.ts",
-      "import": "./esm/index.js"
-    }
-  },
+  "exports": "./esm/index.js",
+  "types": "./types/index.d.ts",
   "files": [
     "esm",
     "types"
@@ -35,8 +31,9 @@
   ],
   "scripts": {
     "build": "run-s build:*",
-    "build:esm": "tsc -p tsconfig.esm.json",
-    "build:types": "tsc -p tsconfig.types.json",
+    "build:esm": "del esm && tsc -p tsconfig.esm.json",
+    "build:types": "del types && tsc -p tsconfig.types.json",
+    "build:min": "terser --module -m -c -o esm/min.js -- esm/index.js ",
     "test": "vitest",
     "lint": "eslint --ext ts --ext js src/",
     "size": "size-limit",
@@ -73,6 +70,7 @@
     ],
     "rules": {
       "prettier/prettier": 2,
+      "@typescript-eslint/no-floating-promises": 0,
       "@typescript-eslint/consistent-type-definitions": 0,
       "@typescript-eslint/explicit-function-return-type": 0,
       "@typescript-eslint/method-signature-style": 0,
@@ -109,8 +107,8 @@
     "@types/prettier": "^2.7.1",
     "@typescript-eslint/eslint-plugin": "^5.42.1",
     "@typescript-eslint/parser": "^5.42.1",
-    "abort-controller": "^3.0.0",
     "auto-changelog": "^2.4.0",
+    "del-cli": "^5.0.0",
     "eslint": "^8.27.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-config-standard-with-typescript": "^23.0.0",
@@ -119,6 +117,7 @@
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-prettier": "^4.2.1",
     "eslint-plugin-promise": "^6.1.1",
+    "jsdom": "^20.0.2",
     "nock": "^13.2.9",
     "node-fetch": "^3.3.0",
     "np": "^7.6.2",
@@ -126,6 +125,7 @@
     "prettier": "^2.7.1",
     "query-string": "^7.1.1",
     "size-limit": "^8.1.0",
+    "terser": "^5.15.1",
     "typescript": "^4.8.4",
     "vitest": "^0.25.1"
   }

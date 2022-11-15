@@ -1,5 +1,4 @@
-interface SearchParams
-  extends Record<string, string | number | Array<string | number>> {}
+interface SearchParams extends Record<string, any> {}
 
 interface Payload {
   json?: unknown
@@ -23,7 +22,7 @@ interface ResponsePromise<P extends Payload = Payload>
   extends Promise<Response<P>>,
     BodyMethods {}
 
-interface Serializer {
+interface Serialize {
   (params: SearchParams): URLSearchParams | string
 }
 
@@ -35,6 +34,12 @@ interface RequestMethod<P extends Payload> {
 }
 
 interface RequiredOptions<P extends Payload> extends RequestInit {
+  /**
+   * Base of the request URL, default to `location.origin` if available.
+   * Provide a valid url if you want to use relative `resource` path
+   * when module loaded in `file://`, `about:blank` or Node.js environment.
+   */
+  base?: string
   /**
    * Part of the request URL
    */
@@ -48,19 +53,18 @@ interface RequiredOptions<P extends Payload> extends RequestInit {
    */
   json?: P['json']
   /**
-   * Search params to append to the request URL.
-   * Provide an `object`, `string`, or `URLSearchParams` instance.
+   * Search params to append to a request URL.
    */
   params?: P['params']
   /**
-   * Custom search params serializer when `object` is used.
+   * Custom search params serializer when `object` passed to `params`.
    * Defaults to internal implementation based on `URLSearchParams`
    * with better handling of array values.
    */
-  serialize?: Serializer
+  serialize?: Serialize
   /**
-   * If specified `TimeoutError` will be thrown and
-   * the request will be cancelled after the specified duration.
+   * If specified `TimeoutError` will be thrown and the request will be
+   * cancelled after a specified duration.
    */
   timeout?: number
   /**
@@ -69,8 +73,7 @@ interface RequiredOptions<P extends Payload> extends RequestInit {
    */
   highWaterMark?: number
   /**
-   * Request handler.
-   * Use the callback to modify options before the request
+   * Use the callback to modify options before a request
    */
   onRequest(url: URL, options: RequestOptions<P>): Promise<void> | void
   /**
@@ -79,13 +82,11 @@ interface RequiredOptions<P extends Payload> extends RequestInit {
   onResponse(response: Response<P>): Promise<Response<P>> | Response<P>
   /**
    * Success response handler (usually codes 200-299).
-   * @see onResponse
    */
   onSuccess?(response: Response<P>): Promise<Response<P>> | Response<P>
   /**
-   * Error handler.
-   * Throw custom error, or return a new `Promise` with `Response` using `request`.
-   * @see onResponse
+   * Instance error handler. Use it to throw custom errors
+   * or to send information to error tracking service.
    */
   onFailure?(
     error: ResponseError<P> | TimeoutError | Error
@@ -99,8 +100,7 @@ interface RequiredOptions<P extends Payload> extends RequestInit {
 interface RequestMethodOptions<P extends Payload>
   extends Omit<Options<P>, 'resource' | 'method'> {}
 
-interface RequestOptions<P extends Payload>
-  extends Omit<RequiredOptions<P>, 'headers' | 'params'> {
+interface RequestOptions<P extends Payload> extends RequiredOptions<P> {
   resource: string
   headers: Headers
   params: URLSearchParams
@@ -109,7 +109,7 @@ interface RequestOptions<P extends Payload>
 interface Options<P extends Payload = Payload>
   extends Partial<RequiredOptions<P>> {}
 
-interface Instance<P extends Payload> {
+interface Instance<P extends Payload = Payload> {
   get: RequestMethod<P>
   post: RequestMethod<P>
   patch: RequestMethod<P>
@@ -129,6 +129,10 @@ const CONTENT_TYPES = {
 } as const
 
 const DEFAULTS: RequiredOptions<Payload> = {
+  base:
+    typeof location !== 'undefined' && location.origin !== 'null'
+      ? location.origin
+      : undefined,
   highWaterMark: 1024 * 1024 * 10, // 10mb
   onRequest: () => {},
   onResponse(result) {
@@ -147,9 +151,9 @@ function defaultSerialize(input: SearchParams): URLSearchParams {
   for (const key of Object.keys(input)) {
     if (Array.isArray(input[key])) {
       // @ts-expect-error checked the variable inside if statement
-      input[key].forEach((item) => params.append(key, item as string))
+      input[key].forEach((item) => params.append(key, item))
     } else {
-      params.append(key, input[key] as string)
+      params.append(key, input[key])
     }
   }
 
@@ -169,7 +173,7 @@ function mergeMaps<Init, Request extends URLSearchParams | Headers>(
 }
 
 const normalizeParams = (
-  serialize: Serializer = defaultSerialize,
+  serialize: Serialize = defaultSerialize,
   params: SearchParams | URLSearchParams | string = ''
 ) =>
   typeof params === 'string' || params instanceof URLSearchParams
@@ -213,8 +217,10 @@ function request<P extends Payload>(
   baseOptions: Options<P>
 ): ResponsePromise<P> {
   const options: RequestOptions<P> = mergeOptions(DEFAULTS, baseOptions)
+
+  let timerID: ReturnType<typeof setTimeout>
   const promise = new Promise<Response<P>>((resolve, reject) => {
-    const url = new URL(options.resource)
+    const url = new URL(options.resource, options.base)
     url.search += options.params
 
     if (options.json != null) {
@@ -222,7 +228,6 @@ function request<P extends Payload>(
       options.headers.set('content-type', CONTENT_TYPES.json)
     }
 
-    let timerID: ReturnType<typeof setTimeout>
     if (options.timeout! > 0) {
       const controller = new AbortController()
 
@@ -241,14 +246,11 @@ function request<P extends Payload>(
       options.signal = controller.signal
     }
 
-    // Running fetch in next tick allow us to set headers after creating promise
-    setTimeout(() =>
-      Promise.resolve(options.onRequest(url, options))
-        .then(() => fetch(url, options))
-        .then((response) => Object.assign(response, { options }))
-        .then(resolve, reject)
-        .then(() => clearTimeout(timerID))
-    )
+    Promise.resolve(options.onRequest(url, options))
+      .then(() => fetch(url, options))
+      .then((response) => Object.assign(response, { options }))
+      .then(resolve, reject)
+      .then(() => clearTimeout(timerID))
   })
     .then(options.onResponse)
     .then(options.onSuccess, options.onFailure) as ResponsePromise<P>
@@ -306,7 +308,7 @@ export {
   Response,
   ResponseError,
   TimeoutError,
-  Serializer,
+  Serialize,
   defaultSerialize as serialize,
   request,
   create,

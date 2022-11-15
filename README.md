@@ -1,7 +1,5 @@
 <h1 align="center">ya-fetch</h1>
 
-[![](https://flat.badgen.net/bundlephobia/minzip/ya-fetch)](https://bundlephobia.com/result?p=ya-fetch)
-
 > Super light-weight wrapper around `fetch`
 
 - [x] Only 1 kB when minified & gziped
@@ -11,6 +9,7 @@
 - [x] First-class [JSON support](#send--receive-json) (automatic serialization, content type headers)
 - [x] [Search params](#params-urlsearchparams--object--string) serialization
 - [x] Global [timeouts](#timeout-number)
+- [x] [Works in a browser](#-import-in-a-browser) without a bundler
 - [x] Written in TypeScript
 - [x] Pure ESM module
 - [x] Zero deps
@@ -25,9 +24,11 @@ $ npm install --save ya-fetch
 
 ```html
 <script type="module">
-  import * as YF from 'https://unpkg.com/ya-fetch/esm/index.js'
+  import * as YF from 'https://unpkg.com/ya-fetch/esm/min.js'
 </script>
 ```
+
+For readable version import from `https://unpkg.com/ya-fetch/esm/index.js`.
 
 [🔗 Playground on CodePen](https://codepen.io/exah/pen/gOKRYjW?editors=0012).
 
@@ -42,7 +43,7 @@ $ npm install --save ya-fetch
 ### Import module
 
 ```ts
-import * as YF from 'ya-fetch'
+import * as YF from 'ya-fetch' // or from 'https://unpkg.com/ya-fetch/esm/min.js' in browsers
 ```
 
 ### Create an instance
@@ -263,22 +264,20 @@ await posts.delete(1).void() // → undefined
 
 ### Node.js Support
 
-Install [`node-fetch`](https://github.com/node-fetch/node-fetch), [`abort-controller`](https://github.com/mysticatea/abort-controller) packages and setup them as globally available variables.
+Install [`node-fetch`](https://github.com/node-fetch/node-fetch) and setup it as globally available variable.
 
 ```sh
-yarn add node-fetch abort-controller
+npm install --save node-fetch
 ```
 
 ```js
 import fetch, { Headers, Request, Response, FormData } from 'node-fetch'
-import AbortController from 'abort-controller'
 
 globalThis.fetch = fetch
 globalThis.Headers = Headers
 globalThis.Request = Request
 globalThis.Response = Response
 globalThis.FormData = FormData
-globalThis.AbortController = AbortController
 ```
 
 > ⚠️ Please, note `node-fetch` v2 may hang on large response when using `.clone()` or response type shortcuts (like `.json()`) because of smaller buffer size (16 kB). Use v3 instead and override default value of 10mb when needed with [`highWaterMark`](https://github.com/node-fetch/node-fetch#custom-highwatermark) option.
@@ -380,13 +379,13 @@ const instance = YF.create({
 })
 
 // will have combined `resource` and merged `headers`
-const extension = instance.extend({
+const extended = instance.extend({
   resource: '/posts'
   headers: { 'X-Something-Else': 'Bar' },
 })
 
 // will send request to: 'https://jsonplaceholder.typicode.com/posts/1'
-await extension.post(1)
+await extended.post(1, { json: { title: 'Hello' } })
 ```
 
 ##### Related
@@ -632,8 +631,7 @@ function void(): Promise<void>
 Sets `Accept: '*/*'` in `headers` and returns [`undefined`](http://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/undefined) after the request:
 
 ```ts
-await instance.post('/posts', { title: 'Hello' })
-// do something
+const nothing = await instance.post('/posts', { title: 'Hello' }).void()
 ```
 
 <details><summary>Same code with native <code>fetch</code></summary>
@@ -663,6 +661,7 @@ if (response.ok) {
 Accepts all the options from native [fetch](http://developer.mozilla.org/en-US/docs/Web/API/fetch#parameters) in the desktop browsers, or [`node-fetch`](https://github.com/node-fetch/node-fetch#options) in node.js. Additionally you can specify:
 
 - [resource](#resource-string)
+- [base](#base-string)
 - [headers](#headers-headersinit)
 - [json](#json-unknown)
 - [params](#params-urlsearchparams--object--string)
@@ -694,7 +693,7 @@ const posts = instance.extend({
 })
 
 // will send request to 'https://jsonplaceholder.typicode.com/posts'
-await posts.get()
+const result = await posts.get().json() // → [{ id: 0, title: 'Title', ... }]
 ```
 
 ##### Related
@@ -705,6 +704,27 @@ await posts.get()
 - [`get`](#getbrpostbrpatchbrputbrdeletebrhead)
 - [`instance`](#returns-instance)
 - [`instance.extend`](#extend)
+
+#### base?: string
+
+Base of a [URL](http://developer.mozilla.org/en-US/docs/Web/API/URL), use it only if you want to specify relative url inside [resource](#resource-string). By default equals to `location.origin` if available. Not merged when you [extend](#extend) an instance. Most of the time use [resource](#resource-string) option instead.
+
+```ts
+// send a request to `new URL('/posts', location.origin)` if possible
+await YF.get('/posts')
+
+// send a request to `https://jsonplaceholder.typicode.com/posts`
+await YF.get('https://jsonplaceholder.typicode.com/posts')
+
+// send a request to `new URL('/posts', 'https://jsonplaceholder.typicode.com')`
+await YF.get('/posts', { base: 'https://jsonplaceholder.typicode.com' })
+```
+
+##### Related
+
+- [Create and instance](#create-an-instance)
+- [Extend and instance](#extend-an-instance)
+- [`options.resource`](#resource-string)
 
 #### headers?: HeadersInit
 
@@ -1065,11 +1085,26 @@ try {
 }
 ```
 
-### Removed exports
+### Removed `options` from the second argument of `onResponse`, `onSuccess`, and `onFailure`
 
-- `isResponseError`
-- `isTimeoutError`
-- `isAbortError`
+```diff
+const api = YF.create({
+-  async onFailure(error, options) {
+-    console.log(options.headers)
+-  },
++  async onFailure(error) {
++    if (error instanceof YF.ResponseError) {
++      console.log(error.response.options.headers)
++    }
++  },
+})
+```
+
+### Removed helpers
+
+- `isResponseError` → `error instanceof YF.ResponseError`
+- `isTimeoutError` → `error instanceof YF.TimeoutError`
+- `isAbortError` → `error instanceof Error && error.name === 'AbortError'`
 
 ## 🔗 Alternatives
 
