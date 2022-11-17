@@ -68,6 +68,10 @@ interface RequiredOptions<P extends Payload> extends RequestInit {
    */
   timeout?: number
   /**
+   * Maximum number of retries to do on failed request
+   */
+  retry?: number
+  /**
    * `node-fetch` v3 option, default is 10mb.\
    * @see {@link https://github.com/exah/ya-fetch#node-js-support}
    */
@@ -91,6 +95,13 @@ interface RequiredOptions<P extends Payload> extends RequestInit {
   onFailure?(
     error: ResponseError<P> | TimeoutError | Error
   ): Promise<Response<P>> | Response<P>
+  /**
+   * Called if retry conditions are met
+   */
+  onRetry(
+    response: Response<P>,
+    retry: number
+  ): Response<P> | Promise<Response<P>>
   /**
    * Transform parsed JSON from response.
    */
@@ -142,6 +153,18 @@ const DEFAULTS: RequiredOptions<Payload> = {
     }
 
     throw new ResponseError(result)
+  },
+  onRetry(result, retryCount) {
+    if (!result.ok && retryCount < result.options.retry!) {
+      return new Promise((resolve) =>
+        setTimeout(
+          () => resolve(request(result.options, retryCount + 1)),
+          0.3 * 2 ** retryCount * 1000
+        )
+      )
+    }
+
+    return result
   },
   onJSON: (json) => json,
 }
@@ -215,7 +238,8 @@ class TimeoutError extends Error {
 }
 
 function request<P extends Payload>(
-  baseOptions: Options<P>
+  baseOptions: Options<P>,
+  retryCount: number = 0
 ): ResponsePromise<P> {
   const options: RequestOptions<P> = mergeOptions(DEFAULTS, baseOptions)
 
@@ -253,6 +277,7 @@ function request<P extends Payload>(
       .then(resolve, reject)
       .then(() => clearTimeout(timerID))
   })
+    .then((response) => options.onRetry(response, retryCount))
     .then(options.onResponse)
     .then(options.onSuccess, options.onFailure) as ResponsePromise<P>
 
