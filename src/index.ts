@@ -98,10 +98,7 @@ interface RequiredOptions<P extends Payload> extends RequestInit {
   /**
    * Called if retry conditions are met
    */
-  onRetry(
-    response: Response<P>,
-    retry: number
-  ): Response<P> | Promise<Response<P>>
+  shouldRetry(response: Response<P>): boolean
   /**
    * Transform parsed JSON from response.
    */
@@ -147,25 +144,14 @@ const DEFAULTS: RequiredOptions<Payload> = {
       : undefined,
   highWaterMark: 1024 * 1024 * 10, // 10mb
   onRequest: () => {},
-  onResponse(result) {
-    if (result.ok) {
-      return result
+  onResponse(response) {
+    if (response.ok) {
+      return response
     }
 
-    throw new ResponseError(result)
+    throw new ResponseError(response)
   },
-  onRetry(result, retryCount) {
-    if (!result.ok && retryCount < result.options.retry!) {
-      return new Promise((resolve) =>
-        setTimeout(
-          () => resolve(request(result.options, retryCount + 1)),
-          0.3 * 2 ** retryCount * 1000
-        )
-      )
-    }
-
-    return result
-  },
+  shouldRetry: () => false,
   onJSON: (json) => json,
 }
 
@@ -239,7 +225,7 @@ class TimeoutError extends Error {
 
 function request<P extends Payload>(
   baseOptions: Options<P>,
-  retryCount: number = 0
+  retry: number = 0
 ): ResponsePromise<P> {
   const options: RequestOptions<P> = mergeOptions(DEFAULTS, baseOptions)
 
@@ -277,7 +263,18 @@ function request<P extends Payload>(
       .then(resolve, reject)
       .then(() => clearTimeout(timerID))
   })
-    .then((response) => options.onRetry(response, retryCount))
+    .then((response) => {
+      if (options.shouldRetry(response) && retry < options.retry!) {
+        return new Promise<Response<P>>((resolve) =>
+          setTimeout(
+            () => resolve(request(options, retry + 1)),
+            0.3 * 2 ** retry * 1000
+          )
+        )
+      }
+
+      return response
+    })
     .then(options.onResponse)
     .then(options.onSuccess, options.onFailure) as ResponsePromise<P>
 
