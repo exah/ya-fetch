@@ -820,3 +820,35 @@ test('throw if no base', async () => {
     new TypeError('Invalid URL')
   )
 })
+
+test('should retry', async () => {
+  const state = {
+    limit: 3,
+    count: 0,
+  }
+
+  const scope = nock('http://localhost')
+    .persist()
+    .get('/comments')
+    .reply(() => {
+      if (state.count < state.limit) {
+        state.count += 1
+        return [500]
+      }
+
+      return [200, 'OK']
+    })
+
+  const api = YF.create({
+    resource: 'http://localhost',
+    retry: state.limit,
+    shouldRetry: (response) => response.status === 500,
+  })
+
+  const result = await api.get('/comments').text()
+
+  expect(state.count).toBe(state.limit)
+  expect(result).toBe('OK')
+
+  scope.done()
+})
