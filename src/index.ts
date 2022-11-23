@@ -108,8 +108,7 @@ interface RequiredOptions<P extends Payload> extends RequestInit {
 interface RequestMethodOptions<P extends Payload>
   extends Omit<Options<P>, 'resource' | 'method'> {}
 
-interface RequestOptions<P extends Payload>
-  extends Omit<RequiredOptions<P>, 'headers' | 'params'> {
+interface RequestOptions<P extends Payload> extends RequiredOptions<P> {
   resource: string
   headers: Headers
   params: URLSearchParams
