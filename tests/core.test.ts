@@ -852,3 +852,75 @@ test('should retry', async () => {
 
   scope.done()
 })
+
+test('retry after header in seconds', async () => {
+  const state = {
+    limit: 1,
+    count: 0,
+    start: Date.now(),
+  }
+
+  const scope = nock('http://localhost')
+    .persist()
+    .get('/comments')
+    .reply(() => {
+      if (state.count < state.limit) {
+        state.count += 1
+        return [503, undefined, { 'Retry-After': 2 }]
+      }
+
+      return [200, 'OK']
+    })
+
+  const api = YF.create({
+    resource: 'http://localhost',
+    retry: state.limit,
+    shouldRetry: (response) => response.status === 503,
+  })
+
+  const result = await api.get('/comments').text()
+
+  expect(Date.now() - state.start).toBeGreaterThan(2000)
+  expect(state.count).toBe(state.limit)
+  expect(result).toBe('OK')
+
+  scope.done()
+})
+
+test('retry after header in date', async () => {
+  const state = {
+    limit: 1,
+    count: 0,
+    start: Date.now(),
+  }
+
+  const scope = nock('http://localhost')
+    .persist()
+    .get('/comments')
+    .reply(() => {
+      if (state.count < state.limit) {
+        state.count += 1
+        return [
+          503,
+          undefined,
+          { 'Retry-After': new Date(Date.now() + 2000).toUTCString() },
+        ]
+      }
+
+      return [200, 'OK']
+    })
+
+  const api = YF.create({
+    resource: 'http://localhost',
+    retry: state.limit,
+    shouldRetry: (response) => response.status === 503,
+  })
+
+  const result = await api.get('/comments').text()
+
+  expect(Date.now() - state.start).toBeGreaterThan(1000)
+  expect(state.count).toBe(state.limit)
+  expect(result).toBe('OK')
+
+  scope.done()
+})

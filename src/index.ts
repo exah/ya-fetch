@@ -169,6 +169,16 @@ function defaultSerialize(input: SearchParams): URLSearchParams {
   return params
 }
 
+function getRetryTimeout(count: number, retryAfter: string | null) {
+  if (retryAfter) {
+    return Number.isNaN(+retryAfter)
+      ? Date.parse(retryAfter) - Date.now()
+      : +retryAfter * 1000
+  }
+
+  return 0.3 * Math.pow(2, count) * 1000
+}
+
 function mergeMaps<Init, Request extends URLSearchParams | Headers>(
   M: new (init?: Init) => Request,
   left?: Init,
@@ -262,18 +272,16 @@ function request<P extends Payload>(
       .then(resolve, reject)
       .then(() => clearTimeout(timerID))
   })
-    .then((response) => {
-      if (options.shouldRetry(response) && retry < options.retry!) {
-        return new Promise<Response<P>>((resolve) =>
-          setTimeout(
-            () => resolve(request(options, retry + 1)),
-            0.3 * 2 ** retry * 1000
-          )
-        )
-      }
-
-      return response
-    })
+    .then((response) =>
+      options.retry! > retry && options.shouldRetry(response)
+        ? new Promise<Response<P>>((resolve) => {
+            setTimeout(
+              () => resolve(request(options, retry + 1)),
+              getRetryTimeout(retry, response.headers.get('retry-after'))
+            )
+          })
+        : response
+    )
     .then(options.onResponse)
     .then(options.onSuccess, options.onFailure) as ResponsePromise<P>
 
