@@ -298,7 +298,6 @@ describe('Response', () => {
 
     const result = await YF.get('http://localhost/blob').arrayBuffer()
 
-    // @ts-ignore
     expect(String.fromCharCode(...new Uint8Array(result))).toBe('test')
     expect(result.byteLength).toBe(4)
     expect(result).toBeInstanceOf(ArrayBuffer)
@@ -797,6 +796,8 @@ test('default serialize', () => {
     number: 0,
     string: 'text',
     array: [1, 'two', 3],
+    null: null,
+    undefined,
   }).toString()
 
   expect(result).toBe('number=0&string=text&array=1&array=two&array=3')
