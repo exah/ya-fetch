@@ -822,7 +822,7 @@ test('throw if no base', async () => {
   )
 })
 
-test('should retry', async () => {
+test('retry', async () => {
   const state = {
     limit: 3,
     count: 0,
@@ -842,8 +842,7 @@ test('should retry', async () => {
 
   const api = YF.create({
     resource: 'http://localhost',
-    retry: state.limit,
-    shouldRetry: (response) => response.status === 500,
+    retry: (response, count) => count < state.limit && response.status === 500,
   })
 
   const result = await api.get('/comments').text()
@@ -875,8 +874,7 @@ test('retry after header in seconds', async () => {
 
   const api = YF.create({
     resource: 'http://localhost',
-    retry: state.limit,
-    shouldRetry: (response) => response.status === 503,
+    retry: (response, count) => count < state.limit && response.status === 503,
   })
 
   const result = await api.get('/comments').text()
@@ -888,7 +886,7 @@ test('retry after header in seconds', async () => {
   scope.done()
 })
 
-test('retry after header in date', async () => {
+test('retry after header as date', async () => {
   const state = {
     limit: 1,
     count: 0,
@@ -913,8 +911,7 @@ test('retry after header in date', async () => {
 
   const api = YF.create({
     resource: 'http://localhost',
-    retry: state.limit,
-    shouldRetry: (response) => response.status === 503,
+    retry: (response, count) => count < state.limit && response.status === 503,
   })
 
   const result = await api.get('/comments').text()
