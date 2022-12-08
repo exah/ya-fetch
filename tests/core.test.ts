@@ -922,3 +922,57 @@ test('retry after header as date', async () => {
 
   scope.done()
 })
+
+test('extend headers', async () => {
+  const scope1 = nock('http://localhost')
+    .matchHeader('x-from', 'website')
+    .get('/posts')
+    .reply(200, [])
+
+  const instance = YF.create({
+    headers: { 'x-from': 'website' },
+  })
+
+  const res1 = await instance.get('http://localhost/posts').json()
+
+  expect(res1).toEqual([])
+  scope1.done()
+
+  const scope2 = nock('http://localhost')
+    .matchHeader('x-from', 'website')
+    .matchHeader('authorization', 'Bearer token')
+    .post('/posts')
+    .reply(200)
+
+  const authorized = instance.extend({
+    headers: { Authorization: 'Bearer token' },
+  })
+
+  const res2 = await authorized.post('http://localhost/posts').void()
+
+  expect(res2).toEqual(undefined)
+  scope2.done()
+})
+
+test('extend resource', async () => {
+  const scope1 = nock('http://localhost').get('/posts').times(2).reply(200, [])
+
+  const instance = YF.create({ resource: 'http://localhost' })
+  const res1 = await instance.get('/posts').json()
+  expect(res1).toEqual([])
+
+  const postsApi = instance.extend({ resource: '/posts' })
+  const res2 = await postsApi.get().json()
+  expect(res2).toEqual([])
+
+  scope1.done()
+
+  const scope3 = nock('http://localhost')
+    .post('/posts', { title: 'Hello' })
+    .reply(200, 'ok')
+
+  const res3 = await postsApi.post({ json: { title: 'Hello' } }).text()
+  expect(res3).toBe('ok')
+
+  scope3.done()
+})
