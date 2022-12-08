@@ -265,10 +265,10 @@ function request<P extends Payload>(
       .then(() => fetch(url, options))
       .then((response) => Object.assign(response, { options }))
       .then(resolve, reject)
+      .then(() => clearTimeout(timerID))
   })
-    .then((response) => {
-      clearTimeout(timerID)
-      return options.retry(response, retry)
+    .then((response) =>
+      options.retry(response, retry)
         ? new Promise<Response<P>>((resolve) => {
             setTimeout(
               () => resolve(request(options, retry + 1)),
@@ -276,7 +276,7 @@ function request<P extends Payload>(
             )
           })
         : response
-    })
+    )
     .then(options.onResponse)
     .then(options.onSuccess, options.onFailure) as ResponsePromise<P>
 
