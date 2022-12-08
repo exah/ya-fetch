@@ -98,7 +98,7 @@ interface RequiredOptions<P extends Payload> extends RequestInit {
   /**
    * Called if retry conditions are met
    */
-  shouldRetry(response: Response<P>): boolean
+  shouldRetry(response: Response<P>): boolean | void
   /**
    * Transform parsed JSON from response.
    */
@@ -150,7 +150,7 @@ const DEFAULTS: RequiredOptions<Payload> = {
 
     throw new ResponseError(response)
   },
-  shouldRetry: () => false,
+  shouldRetry: () => {},
   onJSON: (json) => json,
 }
 
@@ -235,9 +235,9 @@ function request<P extends Payload>(
   baseOptions: Options<P>,
   retry: number = 0
 ): ResponsePromise<P> {
-  const options: RequestOptions<P> = mergeOptions(DEFAULTS, baseOptions)
-
   let timerID: ReturnType<typeof setTimeout>
+
+  const options: RequestOptions<P> = mergeOptions(DEFAULTS, baseOptions)
   const promise = new Promise<Response<P>>((resolve, reject) => {
     const url = new URL(options.resource, options.base)
     url.search += options.params
@@ -269,10 +269,10 @@ function request<P extends Payload>(
       .then(() => fetch(url, options))
       .then((response) => Object.assign(response, { options }))
       .then(resolve, reject)
-      .then(() => clearTimeout(timerID))
   })
-    .then((response) =>
-      options.retry! > retry && options.shouldRetry(response)
+    .then((response) => {
+      clearTimeout(timerID)
+      return options.retry! > retry && options.shouldRetry(response)
         ? new Promise<Response<P>>((resolve) => {
             setTimeout(
               () => resolve(request(options, retry + 1)),
@@ -332,14 +332,14 @@ function create<P extends Payload>(baseOptions: Options<P> = {}): Instance<P> {
 const { get, post, put, patch, head, delete: _delete } = create()
 
 export {
-  ResponsePromise,
-  Payload,
-  Options,
-  Instance,
-  Response,
+  type ResponsePromise,
+  type Payload,
+  type Options,
+  type Instance,
+  type Response,
+  type Serialize,
   ResponseError,
   TimeoutError,
-  Serialize,
   serialize,
   request,
   create,
