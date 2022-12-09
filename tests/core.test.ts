@@ -822,6 +822,36 @@ test('throw if no base', async () => {
   )
 })
 
+test('auto retry', async () => {
+  const state = {
+    limit: 1,
+    count: 0,
+  }
+
+  const scope = nock('http://localhost')
+    .persist()
+    .get('/comments')
+    .reply(() => {
+      if (state.count < state.limit) {
+        state.count += 1
+        return [500]
+      }
+
+      return [200, 'OK']
+    })
+
+  const api = YF.create({
+    resource: 'http://localhost',
+  })
+
+  const result = await api.get('/comments').text()
+
+  expect(state.count).toBe(state.limit)
+  expect(result).toBe('OK')
+
+  scope.done()
+})
+
 test('retry', async () => {
   const state = {
     limit: 3,
