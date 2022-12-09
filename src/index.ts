@@ -143,7 +143,7 @@ const DEFAULTS: RequiredOptions<Payload> = {
       ? location.origin
       : undefined,
   highWaterMark: 1024 * 1024 * 10, // 10mb
-  onRequest: () => {},
+  onRequest() {},
   onResponse(response) {
     if (response.ok) {
       return response
@@ -157,9 +157,10 @@ const DEFAULTS: RequiredOptions<Payload> = {
   retryDelay(response) {
     const retryAfter = response.headers.get('retry-after')
     if (retryAfter) {
-      return Number.isNaN(+retryAfter)
+      return isNaN(+retryAfter)
         ? Date.parse(retryAfter) - Date.now()
-        : (retryAfter as unknown as number) * 1000
+        : // @ts-expect-error Checked with isNaN
+          retryAfter * 1000
     }
 
     return 0.3 * 2 ** response.count * 1000
@@ -167,25 +168,25 @@ const DEFAULTS: RequiredOptions<Payload> = {
   onJSON: (json) => json,
 }
 
-function serialize(input: SearchParams): URLSearchParams {
+const serialize = (input: SearchParams): URLSearchParams => {
   const params = new URLSearchParams()
 
-  for (const [key, value] of Object.entries(input)) {
+  Object.entries(input).forEach(([key, value]) => {
     if (Array.isArray(value)) {
       value.forEach((item) => params.append(key, item))
     } else if (value != null) {
       params.append(key, input[key])
     }
-  }
+  })
 
   return params
 }
 
-function mergeMaps<Init, Request extends URLSearchParams | Headers>(
+const mergeMaps = <Init, Request extends URLSearchParams | Headers>(
   M: new (init?: Init) => Request,
   left?: Init,
   right?: Init
-): Request {
+): Request => {
   const result = new M(left)
 
   new M(right).forEach((value, key) => result.append(key, value))
@@ -237,10 +238,10 @@ class TimeoutError extends Error {
   }
 }
 
-function request<P extends Payload>(
+const request = <P extends Payload>(
   baseOptions: Options<P>,
   count: number = 0
-): ResponsePromise<P> {
+): ResponsePromise<P> => {
   let timerID: ReturnType<typeof setTimeout>
 
   const options: RequestOptions<P> = mergeOptions(DEFAULTS, baseOptions)
@@ -290,21 +291,21 @@ function request<P extends Payload>(
     .then(options.onResponse)
     .then(options.onSuccess, options.onFailure) as ResponsePromise<P>
 
-  for (const [key, value] of Object.entries(CONTENT_TYPES) as Array<
-    [keyof BodyMethods, string]
-  >) {
+  Object.entries(CONTENT_TYPES).forEach(([key, value]) => {
     promise[key] = () => {
       options.headers.set('accept', value)
       return promise
         .then((result) => (key === 'void' ? undefined : result.clone()[key]()))
         .then((parsed) => (key === 'json' ? options.onJSON(parsed) : parsed))
     }
-  }
+  })
 
   return promise
 }
 
-function create<P extends Payload>(baseOptions: Options<P> = {}): Instance<P> {
+const create = <P extends Payload>(
+  baseOptions: Options<P> = {}
+): Instance<P> => {
   const extend = <T extends P>(options: Options<T>) =>
     create<T>(mergeOptions(baseOptions, options))
 
