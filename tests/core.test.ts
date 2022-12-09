@@ -153,10 +153,12 @@ describe('Instance', () => {
   })
 
   test('return new `Response` inside `onFailure`', async () => {
+    const times = 6
     let count = 0
+
     const scope = nock('http://localhost')
-      .persist()
       .get('/comments')
+      .times(times)
       .reply(() => {
         if (count < 5) {
           count++
@@ -170,7 +172,7 @@ describe('Instance', () => {
       resource: 'http://localhost',
       onFailure(error) {
         if (error instanceof YF.ResponseError) {
-          if (error.response.status === 500 && count <= 5) {
+          if (error.response.status === 500 && count < times) {
             return YF.request(error.response.options)
           } else if (error.response.ok) {
             return error.response
@@ -190,10 +192,12 @@ describe('Instance', () => {
   })
 
   test('return new `Response` inside `onResponse`', async () => {
+    const times = 6
     let count = 0
+
     const scope = nock('http://localhost')
-      .persist()
       .get('/comments')
+      .times(times)
       .reply(() => {
         if (count < 5) {
           count++
@@ -206,7 +210,7 @@ describe('Instance', () => {
     const api = YF.create({
       resource: 'http://localhost',
       onResponse(response) {
-        if (response.status === 500 && count <= 5) {
+        if (response.status === 500 && count < times) {
           return YF.request(response.options)
         } else if (response.ok) {
           return response
@@ -824,13 +828,13 @@ test('throw if no base', async () => {
 
 test('auto retry', async () => {
   const state = {
-    limit: 1,
+    limit: 2,
     count: 0,
   }
 
   const scope = nock('http://localhost')
-    .persist()
     .get('/comments')
+    .times(state.limit + 1)
     .reply(() => {
       if (state.count < state.limit) {
         state.count += 1
@@ -859,8 +863,8 @@ test('retry', async () => {
   }
 
   const scope = nock('http://localhost')
-    .persist()
     .get('/comments')
+    .times(state.limit + 1)
     .reply(() => {
       if (state.count < state.limit) {
         state.count += 1
@@ -872,7 +876,7 @@ test('retry', async () => {
 
   const api = YF.create({
     resource: 'http://localhost',
-    retry: ({ count, status }) => count < state.limit && status === 500,
+    retry: ({ attempt, status }) => attempt < state.limit && status === 500,
   })
 
   const result = await api.get('/comments').text()
@@ -891,8 +895,8 @@ test('retry after header in seconds', async () => {
   }
 
   const scope = nock('http://localhost')
-    .persist()
     .get('/comments')
+    .times(state.limit + 1)
     .reply(() => {
       if (state.count < state.limit) {
         state.count += 1
@@ -904,7 +908,7 @@ test('retry after header in seconds', async () => {
 
   const api = YF.create({
     resource: 'http://localhost',
-    retry: ({ count, status }) => count < state.limit && status === 503,
+    retry: ({ attempt, status }) => attempt < state.limit && status === 503,
   })
 
   const result = await api.get('/comments').text()
@@ -924,8 +928,8 @@ test('retry after header as date', async () => {
   }
 
   const scope = nock('http://localhost')
-    .persist()
     .get('/comments')
+    .times(state.limit + 1)
     .reply(() => {
       if (state.count < state.limit) {
         state.count += 1
@@ -941,7 +945,7 @@ test('retry after header as date', async () => {
 
   const api = YF.create({
     resource: 'http://localhost',
-    retry: ({ count, status }) => count < state.limit && status === 503,
+    retry: ({ attempt, status }) => attempt < state.limit && status === 503,
   })
 
   const result = await api.get('/comments').text()

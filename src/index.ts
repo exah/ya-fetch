@@ -7,7 +7,7 @@ interface Payload {
 
 interface Response<P extends Payload = Payload> extends globalThis.Response {
   options: RequestOptions<P>
-  count: number
+  attempt: number
 }
 
 interface BodyMethods {
@@ -152,7 +152,7 @@ const DEFAULTS: RequiredOptions<Payload> = {
     throw new ResponseError(response)
   },
   retry: (response) =>
-    response.count < 2 &&
+    response.attempt < 2 &&
     [408, 413, 429, 500, 502, 503, 504].includes(response.status),
   retryDelay(response) {
     const retryAfter = response.headers.get('retry-after')
@@ -163,7 +163,7 @@ const DEFAULTS: RequiredOptions<Payload> = {
           retryAfter * 1000
     }
 
-    return 0.3 * 2 ** response.count * 1000
+    return 0.3 * 2 ** response.attempt * 1000
   },
   onJSON: (json) => json,
 }
@@ -240,7 +240,7 @@ class TimeoutError extends Error {
 
 const request = <P extends Payload>(
   baseOptions: Options<P>,
-  count: number = 0
+  attempt: number = 0
 ): ResponsePromise<P> => {
   let timerID: ReturnType<typeof setTimeout>
 
@@ -274,7 +274,7 @@ const request = <P extends Payload>(
 
     Promise.resolve(options.onRequest(url, options))
       .then(() => fetch(url, options))
-      .then((response) => Object.assign(response, { options, count }))
+      .then((response) => Object.assign(response, { options, attempt }))
       .then(resolve, reject)
       .then(() => clearTimeout(timerID))
   })
@@ -282,7 +282,7 @@ const request = <P extends Payload>(
       options.retry(response)
         ? new Promise<Response<P>>((resolve) => {
             setTimeout(
-              () => resolve(request(options, count + 1)),
+              () => resolve(request(options, attempt + 1)),
               options.retryDelay(response)
             )
           })

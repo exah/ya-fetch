@@ -6,8 +6,7 @@
     "strictNullChecks": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "isolatedModules": true,
-    "removeComments": true
+    "isolatedModules": true
   },
   "exclude": ["node_modules"]
 }
