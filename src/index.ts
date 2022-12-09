@@ -152,7 +152,7 @@ const DEFAULTS: RequiredOptions<Payload> = {
     throw new ResponseError(response)
   },
   retry: (response) =>
-    response.count < 1 &&
+    response.count < 2 &&
     [408, 413, 429, 500, 502, 503, 504].includes(response.status),
   retryDelay(response) {
     const retryAfter = response.headers.get('retry-after')
