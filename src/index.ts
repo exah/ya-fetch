@@ -7,6 +7,7 @@ interface Payload {
 
 interface Response<P extends Payload = Payload> extends globalThis.Response {
   options: RequestOptions<P>
+  count: number
 }
 
 interface BodyMethods {
@@ -92,9 +93,13 @@ interface RequiredOptions<P extends Payload> extends RequestInit {
     error: ResponseError<P> | TimeoutError | Error
   ): Promise<Response<P>> | Response<P>
   /**
-   * Called if retry conditions are met
+   * Condition for retrying failed requests
    */
-  retry(response: Response<P>, count: number): boolean | void
+  retry(response: Response<P>): boolean | void
+  /**
+   * Customize retry delay
+   */
+  retryDelay(response: Response<P>): number
   /**
    * Transform parsed JSON from response.
    */
@@ -146,7 +151,19 @@ const DEFAULTS: RequiredOptions<Payload> = {
 
     throw new ResponseError(response)
   },
-  retry: () => {},
+  retry: (response) =>
+    response.count < 1 &&
+    [408, 413, 429, 500, 502, 503, 504].includes(response.status),
+  retryDelay(response) {
+    const retryAfter = response.headers.get('retry-after')
+    if (retryAfter) {
+      return Number.isNaN(+retryAfter)
+        ? Date.parse(retryAfter) - Date.now()
+        : (retryAfter as unknown as number) * 1000
+    }
+
+    return 0.3 * 2 ** response.count * 1000
+  },
   onJSON: (json) => json,
 }
 
@@ -162,16 +179,6 @@ function serialize(input: SearchParams): URLSearchParams {
   }
 
   return params
-}
-
-function getRetryTimeout(count: number, retryAfter: string | null) {
-  if (retryAfter) {
-    return Number.isNaN(+retryAfter)
-      ? Date.parse(retryAfter) - Date.now()
-      : +retryAfter * 1000
-  }
-
-  return 0.3 * Math.pow(2, count) * 1000
 }
 
 function mergeMaps<Init, Request extends URLSearchParams | Headers>(
@@ -209,9 +216,12 @@ const mergeOptions = <A extends Options<Payload>, B extends Options<Payload>>(
     ),
   })
 
+interface ResponseError<P extends Payload = Payload> extends Error {
+  response: Response<P>
+}
+
 class ResponseError<P extends Payload = Payload> extends Error {
   name = 'ResponseError'
-  response: Response<P>
 
   constructor(response: Response<P>, message = response.statusText) {
     super(message)
@@ -229,7 +239,7 @@ class TimeoutError extends Error {
 
 function request<P extends Payload>(
   baseOptions: Options<P>,
-  retry: number = 0
+  count: number = 0
 ): ResponsePromise<P> {
   let timerID: ReturnType<typeof setTimeout>
 
@@ -263,16 +273,16 @@ function request<P extends Payload>(
 
     Promise.resolve(options.onRequest(url, options))
       .then(() => fetch(url, options))
-      .then((response) => Object.assign(response, { options }))
+      .then((response) => Object.assign(response, { options, count }))
       .then(resolve, reject)
       .then(() => clearTimeout(timerID))
   })
     .then((response) =>
-      options.retry(response, retry)
+      options.retry(response)
         ? new Promise<Response<P>>((resolve) => {
             setTimeout(
-              () => resolve(request(options, retry + 1)),
-              getRetryTimeout(retry, response.headers.get('retry-after'))
+              () => resolve(request(options, count + 1)),
+              options.retryDelay(response)
             )
           })
         : response
@@ -315,12 +325,12 @@ function create<P extends Payload>(baseOptions: Options<P> = {}): Instance<P> {
       )
 
   return {
-    get: createMethod('GET'),
-    post: createMethod('POST'),
-    patch: createMethod('PATCH'),
-    put: createMethod('PUT'),
-    delete: createMethod('DELETE'),
-    head: createMethod('HEAD'),
+    get: createMethod('get'),
+    post: createMethod('post'),
+    patch: createMethod('patch'),
+    put: createMethod('put'),
+    delete: createMethod('delete'),
+    head: createMethod('head'),
     extend,
   }
 }

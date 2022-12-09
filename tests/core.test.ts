@@ -357,7 +357,7 @@ describe('Response', () => {
         expect(url).toBeInstanceOf(URL)
         expect(url.toString()).toBe(options.resource)
         expect(options.resource).toMatch(/example\.com\/(users|comments)/)
-        expect(options.method).toBe('GET')
+        expect(options.method).toBe('get')
         expect(options.headers.get('x-static')).toEqual('static value')
         expect(options.headers.has('Authorization')).toEqual(false)
 
@@ -842,7 +842,7 @@ test('retry', async () => {
 
   const api = YF.create({
     resource: 'http://localhost',
-    retry: (response, count) => count < state.limit && response.status === 500,
+    retry: ({ count, status }) => count < state.limit && status === 500,
   })
 
   const result = await api.get('/comments').text()
@@ -874,7 +874,7 @@ test('retry after header in seconds', async () => {
 
   const api = YF.create({
     resource: 'http://localhost',
-    retry: (response, count) => count < state.limit && response.status === 503,
+    retry: ({ count, status }) => count < state.limit && status === 503,
   })
 
   const result = await api.get('/comments').text()
@@ -911,7 +911,7 @@ test('retry after header as date', async () => {
 
   const api = YF.create({
     resource: 'http://localhost',
-    retry: (response, count) => count < state.limit && response.status === 503,
+    retry: ({ count, status }) => count < state.limit && status === 503,
   })
 
   const result = await api.get('/comments').text()
