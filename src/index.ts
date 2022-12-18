@@ -29,7 +29,7 @@ interface Serialize {
 
 interface RequestMethod<P extends Payload> {
   <T extends P>(
-    resource?: number | string | RequestMethodOptions<T>,
+    resource?: string | RequestMethodOptions<T>,
     options?: RequestMethodOptions<T>
   ): ResponsePromise<T>
 }
@@ -202,13 +202,16 @@ const normalizeParams = (
     ? params
     : transform(params)
 
+const mergeResource = (left: string = '', right: string = '') =>
+  (/^\//.test(right) ? left.replace(/\/$/, '') : left) + right
+
 const mergeOptions = <A extends Options<Payload>, B extends Options<Payload>>(
   left: A,
   right: Partial<B>,
   serialize = right.serialize || left.serialize
 ) =>
   Object.assign({}, left, right, {
-    resource: (left.resource || '') + (right.resource || ''),
+    resource: mergeResource(left.resource, right.resource),
     headers: mergeMaps(Headers, left.headers, right.headers),
     params: mergeMaps(
       URLSearchParams,

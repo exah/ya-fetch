@@ -1009,4 +1009,13 @@ test('extend resource', async () => {
   expect(res3).toBe('ok')
 
   scope3.done()
+
+  const scope4 = nock('http://localhost')
+    .get('/posts/1')
+    .reply(200, { title: 'Hello' })
+
+  const res4 = await postsApi.get('/1').json()
+  expect(res4).toEqual({ title: 'Hello' })
+
+  scope4.done()
 })

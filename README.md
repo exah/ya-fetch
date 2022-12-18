@@ -291,10 +291,10 @@ It's also possible to create extended version of existing by providing additiona
 const posts = api.extend({ resource: '/posts' })
 
 await posts.get().json() // → [{ id: 0, title: 'Hello' }, ...]
-await posts.get(0).json() // → { id: 0, title: 'Hello' }
+await posts.get('/1').json() // → { id: 0, title: 'Hello' }
 await posts.post({ json: { title: 'Bye' } }).json() // → { id: 1, title: 'Bye' }
-await posts.patch(0, { json: { title: 'Hey' } }).json() // → { id: 0, title: 'Hey' }
-await posts.delete(1).void() // → undefined
+await posts.patch('/0', { json: { title: 'Hey' } }).json() // → { id: 0, title: 'Hey' }
+await posts.delete('/1').void() // → undefined
 ```
 
 #### Related
@@ -433,7 +433,7 @@ const extended = instance.extend({
 })
 
 // will send request to: 'https://jsonplaceholder.typicode.com/posts/1'
-await extended.post(1, { json: { title: 'Hello' } })
+await extended.post('/1', { json: { title: 'Hello' } })
 ```
 
 ##### Related
