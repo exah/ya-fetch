@@ -202,16 +202,13 @@ const normalizeParams = (
     ? params
     : transform(params)
 
-const mergeResource = (left: string = '', right: string = '') =>
-  (/^\//.test(right) ? left.replace(/\/$/, '') : left) + right
-
 const mergeOptions = <A extends Options<Payload>, B extends Options<Payload>>(
   left: A,
   right: Partial<B>,
   serialize = right.serialize || left.serialize
 ) =>
   Object.assign({}, left, right, {
-    resource: mergeResource(left.resource, right.resource),
+    resource: left.resource || '' + right.resource || '',
     headers: mergeMaps(Headers, left.headers, right.headers),
     params: mergeMaps(
       URLSearchParams,
