@@ -317,9 +317,7 @@ const create = <P extends Payload>(
           baseOptions,
           Object.assign(
             { method },
-            typeof resource === 'string' || typeof resource === 'number'
-              ? { resource }
-              : resource,
+            typeof resource === 'string' ? { resource } : resource,
             options
           )
         )
