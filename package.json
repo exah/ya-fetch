@@ -7,8 +7,14 @@
   "repository": "exah/ya-fetch",
   "sideEffects": false,
   "type": "module",
-  "exports": "./esm/index.js",
-  "types": "./types/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "default": "./esm/index.js",
+        "types": "./types/index.d.ts"
+      }
+    }
+  },
   "files": [
     "esm",
     "types"
