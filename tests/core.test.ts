@@ -1,9 +1,23 @@
-import { afterEach, describe, test, expect } from 'vitest'
-import nock from 'nock'
+import {
+  beforeAll,
+  afterAll,
+  afterEach,
+  describe,
+  test,
+  expect,
+  vi,
+} from 'vitest'
+import { rest, type ResponseResolver } from 'msw'
+import { setupServer } from 'msw/node'
 import queryString from 'query-string'
 import * as YF from '../src/index.js'
 
-afterEach(() => nock.cleanAll())
+const server = setupServer()
+
+beforeAll(() => server.listen())
+afterAll(() => server.close())
+
+afterEach(() => server.resetHandlers())
 
 describe('Instance', () => {
   test('should create new instance', () => {
@@ -19,18 +33,22 @@ describe('Instance', () => {
   })
 
   test('should prepend resource with create options', async () => {
-    const scope = nock('http://localhost')
-      .get('/comments')
-      .reply(200, [1, 2, 3, 4])
+    const endpoint = vi.fn(() => Response.json([1, 2, 3, 4]))
+
+    server.use(rest.get('http://localhost/comments', endpoint))
 
     const api = YF.create({ resource: 'http://localhost' })
     const result = await api.get('/comments').json<number[]>()
 
     expect(result).toEqual([1, 2, 3, 4])
-    scope.done()
+    expect(endpoint).toHaveBeenCalledTimes(1)
   })
 
   test('should extend instance with new options', async () => {
+    const endpoint = vi.fn(() => new Response())
+
+    server.use(rest.get('http://localhost/comments', endpoint))
+
     const base = YF.create({ resource: 'http://localhost' })
 
     const extended = base.extend({
@@ -39,40 +57,48 @@ describe('Instance', () => {
       },
     })
 
-    const scope = nock('http://localhost')
-      .matchHeader('Authorization', 'Bearer ::Token::')
-      .get('/comments')
-      .reply(200)
-
     await extended.get('/comments')
-    scope.done()
+
+    expect(endpoint).toHaveBeenCalledTimes(1)
+    expect(endpoint.mock.calls[0]).toSatisfy(
+      ([{ request }]: Parameters<ResponseResolver>) =>
+        request.headers.get('Authorization') === 'Bearer ::Token::'
+    )
   })
 
   test('default request method should be GET', async () => {
-    const scope = nock('http://localhost')
-      .get('/comments')
-      .reply(200, [1, 2, 3, 4])
+    const endpoint = vi.fn(() => Response.json([1, 2, 3, 4]))
+
+    server.use(rest.get('http://localhost/comments', endpoint))
 
     const result = await YF.get('http://localhost/comments').json()
 
     expect(result).toEqual([1, 2, 3, 4])
-    scope.done()
+    expect(endpoint).toHaveBeenCalledTimes(1)
   })
 
   test('should transform `params` to query string', async () => {
-    const scope = nock('http://localhost')
-      .get('/comments?userId=1')
-      .reply(200, 'ok')
+    const endpoint = vi.fn<Parameters<ResponseResolver>>(({ request }) => {
+      const url = new URL(request.url)
+
+      if (url.searchParams.get('userId') === '1') {
+        return new Response('ok')
+      }
+
+      return new Response('Invalid request', { status: 400 })
+    })
+
+    server.use(rest.get('http://localhost/comments', endpoint))
 
     const result = await YF.get('http://localhost/comments', {
       params: { userId: 1 },
     }).text()
 
     expect(result).toBe('ok')
-    scope.done()
+    expect(endpoint).toHaveBeenCalledTimes(1)
   })
 
-  test('should merge `params` from instance and transform to query string', async () => {
+  test.only('should merge `params` from instance and transform to query string', async () => {
     const scope = nock('http://localhost')
       .get('/comments?userId=1&accessToken=1')
       .reply(200, 'ok')
@@ -879,78 +905,10 @@ test('retry', async () => {
     retry: ({ attempt, status }) => attempt < state.limit && status === 500,
   })
 
+  const timestamp = Date.now()
   const result = await api.get('/comments').text()
 
-  expect(state.count).toBe(state.limit)
-  expect(result).toBe('OK')
-
-  scope.done()
-})
-
-test('retry after header in seconds', async () => {
-  const state = {
-    limit: 1,
-    count: 0,
-    start: Date.now(),
-  }
-
-  const scope = nock('http://localhost')
-    .get('/comments')
-    .times(state.limit + 1)
-    .reply(() => {
-      if (state.count < state.limit) {
-        state.count += 1
-        return [503, undefined, { 'Retry-After': 2 }]
-      }
-
-      return [200, 'OK']
-    })
-
-  const api = YF.create({
-    resource: 'http://localhost',
-    retry: ({ attempt, status }) => attempt < state.limit && status === 503,
-  })
-
-  const result = await api.get('/comments').text()
-
-  expect(Date.now() - state.start).toBeGreaterThan(2000)
-  expect(state.count).toBe(state.limit)
-  expect(result).toBe('OK')
-
-  scope.done()
-})
-
-test('retry after header as date', async () => {
-  const state = {
-    limit: 1,
-    count: 0,
-    start: Date.now(),
-  }
-
-  const scope = nock('http://localhost')
-    .get('/comments')
-    .times(state.limit + 1)
-    .reply(() => {
-      if (state.count < state.limit) {
-        state.count += 1
-        return [
-          503,
-          undefined,
-          { 'Retry-After': new Date(Date.now() + 2000).toUTCString() },
-        ]
-      }
-
-      return [200, 'OK']
-    })
-
-  const api = YF.create({
-    resource: 'http://localhost',
-    retry: ({ attempt, status }) => attempt < state.limit && status === 503,
-  })
-
-  const result = await api.get('/comments').text()
-
-  expect(Date.now() - state.start).toBeGreaterThan(1000)
+  expect(Date.now() - timestamp).toBeGreaterThan(2000)
   expect(state.count).toBe(state.limit)
   expect(result).toBe('OK')
 

@@ -99,7 +99,7 @@ interface RequiredOptions<P extends Payload> extends RequestInit {
   /**
    * Customize retry delay
    */
-  retryDelay(response: Response<P>): number
+  delay(response: Response<P>): number
   /**
    * Transform parsed JSON from response.
    */
@@ -154,17 +154,7 @@ const DEFAULTS: RequiredOptions<Payload> = {
   retry: (response) =>
     response.attempt < 2 &&
     [408, 413, 429, 500, 502, 503, 504].includes(response.status),
-  retryDelay(response) {
-    const retryAfter = response.headers.get('retry-after')
-    if (retryAfter) {
-      return isNaN(+retryAfter)
-        ? Date.parse(retryAfter) - Date.now()
-        : // @ts-expect-error Checked with isNaN
-          retryAfter * 1000
-    }
-
-    return 0.3 * 2 ** response.attempt * 1000
-  },
+  delay: (response) => 0.3 * 2 ** response.attempt * 1000,
   onJSON: (json) => json,
 }
 
@@ -208,7 +198,7 @@ const mergeOptions = <A extends Options<Payload>, B extends Options<Payload>>(
   serialize = right.serialize || left.serialize
 ) =>
   Object.assign({}, left, right, {
-    resource: left.resource || '' + right.resource || '',
+    resource: (left.resource || '') + (right.resource || ''),
     headers: mergeMaps(Headers, left.headers, right.headers),
     params: mergeMaps(
       URLSearchParams,
@@ -283,7 +273,7 @@ const request = <P extends Payload>(
         ? new Promise<Response<P>>((resolve) => {
             setTimeout(
               () => resolve(request(options, attempt + 1)),
-              options.retryDelay(response)
+              options.delay(response)
             )
           })
         : response

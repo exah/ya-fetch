@@ -44,7 +44,7 @@
   "size-limit": [
     {
       "path": "./esm/index.js",
-      "limit": "1.15Kb"
+      "limit": "1.1Kb"
     }
   ],
   "publishConfig": {
@@ -114,8 +114,8 @@
     "eslint-plugin-prettier": "^4.2.1",
     "eslint-plugin-promise": "^6.1.1",
     "jsdom": "^20.0.3",
+    "msw": "^0.0.0-fetch.rc-15",
     "nock": "^13.2.9",
-    "node-fetch": "^3.3.0",
     "np": "^7.6.2",
     "npm-run-all": "^4.1.5",
     "prettier": "^2.8.1",

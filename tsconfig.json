@@ -5,8 +5,9 @@
     "strict": true,
     "strictNullChecks": true,
     "esModuleInterop": true,
-    "skipLibCheck": true,
+    "skipLibCheck": false,
     "isolatedModules": true
   },
-  "exclude": ["node_modules"]
+  "include": ["env.d.ts", "src", "tests"],
+  "exclude": ["node_modules", "types"]
 }

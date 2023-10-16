@@ -256,7 +256,7 @@ const posts = await retriable()
 
 - [`get`](#getbrpostbrpatchbrputbrdeletebrhead)
 - [`options.retry`](#retryresponse-response-boolean)
-- [`options.retryDelay`](#retrydelayresponse-response-number)
+- [`options.delay`](#delayresponse-response-number)
 
 ### Provide custom search params serializer
 
@@ -872,6 +872,10 @@ try {
   }
 }
 ```
+
+#### retry?(response: Response): boolean
+
+#### delay?(response: Response): number
 
 #### onRequest?(url: URL, options: RequestOptions): Promise\<void> | void
 
