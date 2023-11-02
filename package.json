@@ -54,6 +54,9 @@
       "limit": "1Kb"
     }
   ],
+  "engines": {
+    "node": ">=16"
+  },
   "publishConfig": {
     "access": "public"
   },
