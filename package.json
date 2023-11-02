@@ -43,7 +43,6 @@
     "build:types": "del types && tsc -p tsconfig.types.json",
     "build:min": "terser --module -m -c -o esm/min.js -- esm/index.js ",
     "test": "vitest",
-    "lint": "eslint --ext ts --ext js src/",
     "size": "size-limit",
     "release": "np --no-cleanup",
     "version": "auto-changelog -p && git add CHANGELOG.md",
@@ -57,42 +56,6 @@
   ],
   "publishConfig": {
     "access": "public"
-  },
-  "eslintConfig": {
-    "parser": "@typescript-eslint/parser",
-    "parserOptions": {
-      "project": "./tsconfig.json"
-    },
-    "globals": {
-      "fetch": true,
-      "FormData": true,
-      "Response": true,
-      "AbortController": true
-    },
-    "extends": [
-      "standard-with-typescript",
-      "prettier"
-    ],
-    "plugins": [
-      "prettier"
-    ],
-    "rules": {
-      "prettier/prettier": 2,
-      "@typescript-eslint/no-floating-promises": 0,
-      "@typescript-eslint/consistent-type-definitions": 0,
-      "@typescript-eslint/explicit-function-return-type": 0,
-      "@typescript-eslint/method-signature-style": 0,
-      "@typescript-eslint/no-invalid-void-type": 0,
-      "@typescript-eslint/no-misused-promises": 0,
-      "@typescript-eslint/prefer-reduce-type-parameter": 0,
-      "@typescript-eslint/prefer-ts-expect-error": 0,
-      "@typescript-eslint/promise-function-async": 0,
-      "@typescript-eslint/restrict-plus-operands": 0,
-      "@typescript-eslint/strict-boolean-expressions": 0,
-      "@typescript-eslint/prefer-nullish-coalescing": 0,
-      "@typescript-eslint/prefer-function-type": 0,
-      "@typescript-eslint/no-non-null-assertion": 0
-    }
   },
   "prettier": {
     "arrowParens": "always",
@@ -108,33 +71,19 @@
     "template": ".changelog.hbs"
   },
   "devDependencies": {
-    "@size-limit/preset-small-lib": "^8.1.0",
-    "@types/eslint": "^8.4.10",
-    "@types/eslint-plugin-prettier": "^3.1.0",
-    "@types/node": "^18.11.9",
-    "@types/prettier": "^2.7.1",
-    "@typescript-eslint/eslint-plugin": "^5.42.1",
-    "@typescript-eslint/parser": "^5.42.1",
+    "@size-limit/preset-small-lib": "^10.0.2",
     "auto-changelog": "^2.4.0",
-    "del-cli": "^5.0.0",
-    "eslint": "^8.27.0",
-    "eslint-config-prettier": "^8.5.0",
-    "eslint-config-standard-with-typescript": "^23.0.0",
-    "eslint-plugin-import": "^2.26.0",
-    "eslint-plugin-n": "^15.5.1",
-    "eslint-plugin-node": "^11.1.0",
-    "eslint-plugin-prettier": "^4.2.1",
-    "eslint-plugin-promise": "^6.1.1",
-    "jsdom": "^20.0.2",
-    "nock": "^13.2.9",
-    "node-fetch": "^3.3.0",
-    "np": "^7.7.0",
+    "del-cli": "^5.1.0",
+    "jsdom": "^22.1.0",
+    "nock": "^13.3.7",
+    "node-fetch": "^3.3.2",
+    "np": "^8.0.4",
     "npm-run-all": "^4.1.5",
-    "prettier": "^2.7.1",
-    "query-string": "^7.1.1",
-    "size-limit": "^8.1.0",
-    "terser": "^5.15.1",
-    "typescript": "^4.8.4",
-    "vitest": "^0.25.1"
+    "prettier": "^3.0.3",
+    "query-string": "^8.1.0",
+    "size-limit": "^10.0.0",
+    "terser": "^5.24.0",
+    "typescript": "^5.2.2",
+    "vitest": "^0.34.6"
   }
 }
