@@ -145,14 +145,13 @@ const DEFAULTS: RequiredOptions<Payload> = {
   onJSON: (json) => json,
 }
 
-function defaultSerialize(input: SearchParams): URLSearchParams {
+function serialize(input: SearchParams): URLSearchParams {
   const params = new URLSearchParams()
 
-  for (const key of Object.keys(input)) {
-    if (Array.isArray(input[key])) {
-      // @ts-expect-error checked the variable inside if statement
-      input[key].forEach((item) => params.append(key, item))
-    } else {
+  for (const [key, value] of Object.entries(input)) {
+    if (Array.isArray(value)) {
+      value.forEach((item) => params.append(key, item))
+    } else if (value != null) {
       params.append(key, input[key])
     }
   }
@@ -160,11 +159,11 @@ function defaultSerialize(input: SearchParams): URLSearchParams {
   return params
 }
 
-function mergeMaps<Init, Request extends URLSearchParams | Headers>(
+const mergeMaps = <Init, Request extends URLSearchParams | Headers>(
   M: new (init?: Init) => Request,
   left?: Init,
   right?: Init
-): Request {
+): Request => {
   const result = new M(left)
 
   new M(right).forEach((value, key) => result.append(key, value))
@@ -173,12 +172,12 @@ function mergeMaps<Init, Request extends URLSearchParams | Headers>(
 }
 
 const normalizeParams = (
-  serialize: Serialize = defaultSerialize,
+  transform: Serialize = serialize,
   params: SearchParams | URLSearchParams | string = ''
 ) =>
   typeof params === 'string' || params instanceof URLSearchParams
     ? params
-    : serialize(params)
+    : transform(params)
 
 const mergeOptions = <A extends Options<Payload>, B extends Options<Payload>>(
   left: A,
@@ -255,9 +254,11 @@ function request<P extends Payload>(
     .then(options.onResponse)
     .then(options.onSuccess, options.onFailure) as ResponsePromise<P>
 
-  for (const key of Object.keys(CONTENT_TYPES) as Array<keyof BodyMethods>) {
+  for (const [key, value] of Object.entries(CONTENT_TYPES) as Array<
+    [keyof BodyMethods, string]
+  >) {
     promise[key] = () => {
-      options.headers.set('accept', CONTENT_TYPES[key])
+      options.headers.set('accept', value)
       return promise
         .then((result) => (key === 'void' ? undefined : result.clone()[key]()))
         .then((parsed) => (key === 'json' ? options.onJSON(parsed) : parsed))
@@ -309,7 +310,7 @@ export {
   ResponseError,
   TimeoutError,
   Serialize,
-  defaultSerialize as serialize,
+  serialize,
   request,
   create,
   get,
