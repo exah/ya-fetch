@@ -1,9 +1,22 @@
-import { afterEach, describe, test, expect } from 'vitest'
-import nock from 'nock'
+import {
+  beforeAll,
+  afterAll,
+  afterEach,
+  describe,
+  test,
+  expect,
+  vi,
+} from 'vitest'
+import { http, delay, type ResponseResolver } from 'msw'
+import { setupServer } from 'msw/node'
 import queryString from 'query-string'
 import * as YF from '../src/index.js'
 
-afterEach(() => nock.cleanAll())
+const server = setupServer()
+
+beforeAll(() => server.listen())
+afterAll(() => server.close())
+afterEach(() => server.resetHandlers())
 
 describe('Instance', () => {
   test('should create new instance', () => {
@@ -19,18 +32,20 @@ describe('Instance', () => {
   })
 
   test('should prepend resource with create options', async () => {
-    const scope = nock('http://localhost')
-      .get('/comments')
-      .reply(200, [1, 2, 3, 4])
+    const endpoint = vi.fn(() => Response.json([1, 2, 3, 4]))
+    server.use(http.get('http://localhost/comments', endpoint))
 
     const api = YF.create({ resource: 'http://localhost' })
     const result = await api.get('/comments').json<number[]>()
 
     expect(result).toEqual([1, 2, 3, 4])
-    scope.done()
+    expect(endpoint).toHaveBeenCalledTimes(1)
   })
 
   test('should extend instance with new options', async () => {
+    const endpoint = vi.fn(() => new Response())
+    server.use(http.get('http://localhost/comments', endpoint))
+
     const base = YF.create({ resource: 'http://localhost' })
 
     const extended = base.extend({
@@ -39,43 +54,62 @@ describe('Instance', () => {
       },
     })
 
-    const scope = nock('http://localhost')
-      .matchHeader('Authorization', 'Bearer ::Token::')
-      .get('/comments')
-      .reply(200)
-
     await extended.get('/comments')
-    scope.done()
+
+    expect(endpoint).toHaveBeenCalledTimes(1)
+    expect(endpoint.mock.calls[0]).toSatisfy(
+      ([{ request }]: Parameters<ResponseResolver>) =>
+        request.headers.get('Authorization') === 'Bearer ::Token::'
+    )
   })
 
   test('default request method should be GET', async () => {
-    const scope = nock('http://localhost')
-      .get('/comments')
-      .reply(200, [1, 2, 3, 4])
+    const endpoint = vi.fn(() => Response.json([1, 2, 3, 4]))
+
+    server.use(http.get('http://localhost/comments', endpoint))
 
     const result = await YF.get('http://localhost/comments').json()
 
     expect(result).toEqual([1, 2, 3, 4])
-    scope.done()
+    expect(endpoint).toHaveBeenCalledTimes(1)
   })
 
   test('should transform `params` to query string', async () => {
-    const scope = nock('http://localhost')
-      .get('/comments?userId=1')
-      .reply(200, 'ok')
+    const endpoint = vi.fn<Parameters<ResponseResolver>>(({ request }) => {
+      const url = new URL(request.url)
+
+      if (url.searchParams.get('userId') === '1') {
+        return new Response('ok')
+      }
+
+      return new Response('Invalid request', { status: 400 })
+    })
+
+    server.use(http.get('http://localhost/comments', endpoint))
 
     const result = await YF.get('http://localhost/comments', {
       params: { userId: 1 },
     }).text()
 
     expect(result).toBe('ok')
-    scope.done()
+    expect(endpoint).toHaveBeenCalledTimes(1)
   })
 
   test('should merge `params` from instance and transform to query string', async () => {
-    const scope = nock('http://localhost')
-      .get('/comments?userId=1&accessToken=1')
-      .reply(200, 'ok')
+    const endpoint = vi.fn<Parameters<ResponseResolver>>(({ request }) => {
+      const url = new URL(request.url)
+
+      if (
+        url.searchParams.get('userId') === '1' &&
+        url.searchParams.get('accessToken') === '1'
+      ) {
+        return new Response('ok')
+      }
+
+      return new Response('Invalid request', { status: 400 })
+    })
+
+    server.use(http.get('http://localhost/comments', endpoint))
 
     const api = YF.create({
       resource: 'http://localhost',
@@ -85,25 +119,22 @@ describe('Instance', () => {
     const result = await api.get('/comments', { params: { userId: 1 } }).text()
 
     expect(result).toBe('ok')
-    scope.done()
+    expect(endpoint).toHaveBeenCalledTimes(1)
   })
 
   test('should modify `json` response with `onJSON` method', async () => {
-    type Comments = number[]
-
-    const scope = nock('http://localhost')
-      .get('/comments')
-      .reply(200, { data: [1, 2, 3, 4] })
+    const endpoint = vi.fn(() => Response.json({ data: [1, 2, 3, 4] }))
+    server.use(http.get('http://localhost/comments', endpoint))
 
     const api = YF.create({
       resource: 'http://localhost',
-      onJSON: (parsed: { data: Comments }) => parsed.data,
+      onJSON: (parsed: { data: number[] }) => parsed.data,
     })
 
-    const result = await api.get('/comments').json<Comments>()
+    const result = await api.get('/comments').json<number[]>()
 
     expect(result).toEqual([1, 2, 3, 4])
-    scope.done()
+    expect(endpoint).toHaveBeenCalledTimes(1)
   })
 
   test('should be able to return custom error `onFailure`', async () => {
@@ -119,9 +150,10 @@ describe('Instance', () => {
       }
     }
 
-    const scope = nock('http://localhost')
-      .get('/comments')
-      .reply(403, { errorCode: 100 })
+    const endpoint = vi.fn(() =>
+      Response.json({ errorCode: ErrorCode['Foo Error'] }, { status: 403 })
+    )
+    server.use(http.get('http://localhost/comments', endpoint))
 
     const api = YF.create({
       resource: 'http://localhost',
@@ -149,28 +181,29 @@ describe('Instance', () => {
       }
     }
 
-    scope.done()
+    expect(endpoint).toHaveBeenCalledTimes(1)
   })
 
   test('return new `Response` inside `onFailure`', async () => {
+    const times = 6
     let count = 0
-    const scope = nock('http://localhost')
-      .persist()
-      .get('/comments')
-      .reply(() => {
-        if (count < 5) {
-          count++
-          return [500]
-        }
 
-        return [200, 'OK']
-      })
+    const endpoint = vi.fn(() => {
+      if (count < 5) {
+        count++
+        return new Response(null, { status: 500 })
+      }
+
+      return new Response('OK')
+    })
+
+    server.use(http.get('http://localhost/comments', endpoint))
 
     const api = YF.create({
       resource: 'http://localhost',
       onFailure(error) {
         if (error instanceof YF.ResponseError) {
-          if (error.response.status === 500 && count <= 5) {
+          if (error.response.status === 500 && count < times) {
             return YF.request(error.response.options)
           } else if (error.response.ok) {
             return error.response
@@ -185,28 +218,28 @@ describe('Instance', () => {
 
     expect(count).toBe(5)
     expect(result).toBe('OK')
-
-    scope.done()
+    expect(endpoint).toHaveBeenCalledTimes(6)
   })
 
   test('return new `Response` inside `onResponse`', async () => {
+    const times = 6
     let count = 0
-    const scope = nock('http://localhost')
-      .persist()
-      .get('/comments')
-      .reply(() => {
-        if (count < 5) {
-          count++
-          return [500]
-        }
 
-        return [200, 'OK']
-      })
+    const endpoint = vi.fn(() => {
+      if (count < 5) {
+        count++
+        return new Response(null, { status: 500 })
+      }
+
+      return new Response('OK')
+    })
+
+    server.use(http.get('http://localhost/comments', endpoint))
 
     const api = YF.create({
       resource: 'http://localhost',
       onResponse(response) {
-        if (response.status === 500 && count <= 5) {
+        if (response.status === 500 && count < times) {
           return YF.request(response.options)
         } else if (response.ok) {
           return response
@@ -220,20 +253,28 @@ describe('Instance', () => {
 
     expect(count).toBe(5)
     expect(result).toBe('OK')
-
-    scope.done()
+    expect(endpoint).toHaveBeenCalledTimes(6)
   })
 
   test('should be possible to use custom `serialize` function', async () => {
-    const scope = nock('http://localhost')
-      .get('/comments?accessToken=1&users[]=1&users[]=2&users[]=3')
-      .reply(200, 'ok')
+    const endpoint = vi.fn<Parameters<ResponseResolver>>(({ request }) => {
+      const url = new URL(request.url)
+
+      if (
+        url.search ===
+        '?accessToken=1&users%5B%5D=1&users%5B%5D=2&users%5B%5D=3'
+      ) {
+        return new Response('ok')
+      }
+
+      return new Response('Invalid request', { status: 400 })
+    })
+
+    server.use(http.get('http://localhost/comments', endpoint))
 
     const api = YF.create({
       resource: 'http://localhost',
-      params: {
-        accessToken: '1',
-      },
+      params: { accessToken: '1' },
       serialize: (params) =>
         queryString.stringify(params, { arrayFormat: 'bracket' }),
     })
@@ -243,18 +284,19 @@ describe('Instance', () => {
       .text()
 
     expect(result).toBe('ok')
-    scope.done()
+    expect(endpoint).toHaveBeenCalledTimes(1)
   })
 })
 
 describe('Response', () => {
   test('request should return `Response` object by default', async () => {
-    const scope = nock('http://localhost').get('/comments').reply(200)
+    const endpoint = vi.fn(() => new Response())
+    server.use(http.get('http://localhost/comments', endpoint))
 
     const result = await YF.get('http://localhost/comments')
 
     expect(result).toBeInstanceOf(Response)
-    scope.done()
+    expect(endpoint).toHaveBeenCalledTimes(1)
   })
 
   test('request should return `json`', async () => {
@@ -267,89 +309,124 @@ describe('Response', () => {
       ],
     }
 
-    const scope = nock('http://localhost')
-      .matchHeader('accept', 'application/json')
-      .get('/comments')
-      .reply(200, data)
+    const endpoint = vi.fn<Parameters<ResponseResolver>>(({ request }) =>
+      request.headers.get('accept') === 'application/json'
+        ? Response.json(data)
+        : Response.error()
+    )
 
+    server.use(http.get('http://localhost/comments', endpoint))
     const result = await YF.get('http://localhost/comments').json()
 
     expect(result).toEqual(data)
-    scope.done()
+    expect(endpoint).toHaveBeenCalledTimes(1)
   })
 
   test('request should return `text`', async () => {
-    const scope = nock('http://localhost')
-      .matchHeader('accept', 'text/*')
-      .get('/comments')
-      .reply(200, 'ok')
+    const endpoint = vi.fn<Parameters<ResponseResolver>>(({ request }) =>
+      request.headers.get('accept') === 'text/*'
+        ? new Response('ok')
+        : Response.error()
+    )
+
+    server.use(http.get('http://localhost/comments', endpoint))
 
     const result = await YF.get('http://localhost/comments').text()
 
     expect(result).toBe('ok')
-    scope.done()
+    expect(endpoint).toHaveBeenCalledTimes(1)
   })
 
   test('request should return `arrayBuffer`', async () => {
-    const scope = nock('http://localhost')
-      .matchHeader('accept', '*/*')
-      .get('/blob')
-      .reply(200, 'test')
+    const endpoint = vi.fn<Parameters<ResponseResolver>>(({ request }) =>
+      request.headers.get('accept') === '*/*'
+        ? new Response('test')
+        : Response.error()
+    )
+
+    server.use(http.get('http://localhost/blob', endpoint))
 
     const result = await YF.get('http://localhost/blob').arrayBuffer()
 
     expect(String.fromCharCode(...new Uint8Array(result))).toBe('test')
     expect(result.byteLength).toBe(4)
     expect(result).toBeInstanceOf(ArrayBuffer)
-    scope.done()
+    expect(endpoint).toHaveBeenCalledTimes(1)
   })
 
   test('request should return `blob`', async () => {
-    const scope = nock('http://localhost')
-      .matchHeader('accept', '*/*')
-      .get('/blob')
-      .reply(200, 'test')
+    const endpoint = vi.fn<Parameters<ResponseResolver>>(({ request }) =>
+      request.headers.get('accept') === '*/*'
+        ? new Response('test')
+        : Response.error()
+    )
+    server.use(http.get('http://localhost/blob', endpoint))
 
     const result = await YF.get('http://localhost/blob').blob()
 
     expect(await result.text()).toBe('test')
     expect(result.size).toBe(4)
     expect(result.type).toBeDefined()
-    scope.done()
+    expect(endpoint).toHaveBeenCalledTimes(1)
   })
 
   test('should be possible to set headers with a function', async () => {
-    let token = 'none'
+    const commentsEndpoint = vi.fn<Parameters<ResponseResolver>>(
+      ({ request }) =>
+        request.headers.get('Authorization') === 'Bearer token-1'
+          ? new Response()
+          : Response.error()
+    )
 
-    const scope = nock('https://example.com')
+    const usersEndpoint = vi.fn<Parameters<ResponseResolver>>(({ request }) =>
+      request.headers.get('Authorization') === 'Bearer token-2'
+        ? new Response()
+        : Response.error()
+    )
+
+    server.use(
+      http.get('https://example.com/comments', commentsEndpoint),
+      http.get('https://example.com/users', usersEndpoint)
+    )
+
+    let token: string
     const api = YF.create({
       resource: 'https://example.com',
-      onRequest(url, options) {
+      onRequest(_, options) {
         options.headers.set('Authorization', `Bearer ${token}`)
       },
     })
 
-    scope
-      .get('/comments')
-      .matchHeader('Authorization', 'Bearer token-1')
-      .reply(200)
     token = 'token-1'
     await api.get('/comments')
 
-    scope
-      .get('/users')
-      .matchHeader('Authorization', 'Bearer token-2')
-      .reply(200)
     token = 'token-2'
     await api.get('/users')
 
-    scope.done()
+    expect(commentsEndpoint).toHaveBeenCalledTimes(1)
+    expect(usersEndpoint).toHaveBeenCalledTimes(1)
   })
 
   test('should be possible to set headers with an async function', async () => {
-    let token = 'none'
+    const commentsEndpoint = vi.fn<Parameters<ResponseResolver>>(
+      ({ request }) =>
+        request.headers.get('Authorization') === 'Bearer token-1'
+          ? new Response()
+          : Response.error()
+    )
 
-    const scope = nock('https://example.com')
+    const usersEndpoint = vi.fn<Parameters<ResponseResolver>>(({ request }) =>
+      request.headers.get('Authorization') === 'Bearer token-2'
+        ? new Response()
+        : Response.error()
+    )
+
+    server.use(
+      http.get('https://example.com/comments', commentsEndpoint),
+      http.get('https://example.com/users', usersEndpoint)
+    )
+
+    let token: string
     const api = YF.create({
       resource: 'https://example.com',
       headers: { 'x-static': 'static value' },
@@ -366,22 +443,12 @@ describe('Response', () => {
       },
     })
 
-    scope
-      .get('/comments')
-      .matchHeader('Authorization', 'Bearer token-1')
-      .reply(200)
-
     token = 'pre-token-1'
     setTimeout(() => {
       token = 'token-1'
     }, 16)
 
     await api.get('/comments')
-
-    scope
-      .get('/users')
-      .matchHeader('Authorization', 'Bearer token-2')
-      .reply(200)
 
     token = 'pre-token-2'
     setTimeout(() => {
@@ -390,52 +457,52 @@ describe('Response', () => {
 
     await api.get('/users')
 
-    scope.done()
+    expect(commentsEndpoint).toHaveBeenCalledTimes(1)
+    expect(usersEndpoint).toHaveBeenCalledTimes(1)
   })
 })
 
 describe('Timeout', () => {
   test('should throw if timeout is passed', async () => {
-    expect.assertions(1)
+    const endpoint = vi.fn(async () => {
+      await delay(20)
+      return new Response()
+    })
 
-    const scope = nock('http://localhost')
-      .get('/comments')
-      .delayConnection(20)
-      .reply(200)
+    server.use(http.get('http://localhost/comments', endpoint))
 
-    try {
-      await YF.get('http://localhost/comments', { timeout: 10 })
-    } catch (error) {
-      expect(error).toBeInstanceOf(YF.TimeoutError)
-    }
+    const promise = YF.get('http://localhost/comments', { timeout: 10 })
 
-    scope.done()
+    await expect(promise).rejects.toThrow(new YF.TimeoutError())
+    expect(endpoint).toHaveBeenCalledTimes(1)
   })
 
   test('should resolve if timeout is smaller than delay', async () => {
-    const scope = nock('http://localhost')
-      .get('/comments')
-      .delayConnection(10)
-      .reply(200)
+    const endpoint = vi.fn(async () => {
+      await delay(10)
+      return new Response()
+    })
+
+    server.use(http.get('http://localhost/comments', endpoint))
 
     await YF.get('http://localhost/comments', { timeout: 20 })
-    scope.done()
+    expect(endpoint).toHaveBeenCalledTimes(1)
   })
 })
 
 describe('AbortController', () => {
   test('AbortController should cancel request', async () => {
-    expect.assertions(1)
+    const endpoint = vi.fn(async () => {
+      await delay(20)
+      return new Response()
+    })
+
+    server.use(http.get('http://localhost/comments', endpoint))
 
     const controller = new AbortController()
-
-    const scope = nock('http://localhost')
-      .get('/comments')
-      .delayConnection(20)
-      .reply(200)
+    setTimeout(() => controller.abort(), 10)
 
     try {
-      setTimeout(() => controller.abort(), 10)
       await YF.get('http://localhost/comments', {
         signal: controller.signal,
       })
@@ -445,21 +512,20 @@ describe('AbortController', () => {
       }
     }
 
-    scope.done()
+    expect(endpoint).toHaveBeenCalledTimes(1)
   })
 
   test('AbortController should cancel request with timeout', async () => {
-    expect.assertions(1)
+    const endpoint = vi.fn(async () => {
+      await delay(20)
+      return new Response()
+    })
 
+    server.use(http.get('http://localhost/comments', endpoint))
     const controller = new AbortController()
-
-    const scope = nock('http://localhost')
-      .get('/comments')
-      .delayConnection(20)
-      .reply(200)
+    setTimeout(() => controller.abort(), 10)
 
     try {
-      setTimeout(() => controller.abort(), 10)
       await YF.get('http://localhost/comments', {
         signal: controller.signal,
         timeout: 15,
@@ -470,21 +536,21 @@ describe('AbortController', () => {
       }
     }
 
-    scope.done()
+    expect(endpoint).toHaveBeenCalledTimes(1)
   })
 
   test('AbortController should cancel request before timeout', async () => {
-    expect.assertions(1)
+    const endpoint = vi.fn(async () => {
+      await delay(20)
+      return new Response()
+    })
+
+    server.use(http.get('http://localhost/comments', endpoint))
 
     const controller = new AbortController()
-
-    const scope = nock('http://localhost')
-      .get('/comments')
-      .delayConnection(20)
-      .reply(200)
+    setTimeout(() => controller.abort(), 10)
 
     try {
-      setTimeout(() => controller.abort(), 10)
       await YF.get('http://localhost/comments', {
         signal: controller.signal,
         timeout: 5,
@@ -493,60 +559,84 @@ describe('AbortController', () => {
       expect(error).toBeInstanceOf(YF.TimeoutError)
     }
 
-    scope.done()
+    expect(endpoint).toHaveBeenCalledTimes(1)
   })
 })
 
 describe('Methods', () => {
   describe('GET', () => {
     test('should perform success get request', async () => {
-      const scope = nock('http://localhost').get('/comments').reply(200, 'ok')
+      const endpoint = vi.fn(() => new Response('ok'))
+      server.use(http.get('http://localhost/comments', endpoint))
 
       const result = await YF.get('http://localhost/comments').text()
 
       expect(result).toBe('ok')
-      scope.done()
+      expect(endpoint).toHaveBeenCalledTimes(1)
     })
 
     test('should throw `ResponseError` on failed get request', async () => {
-      expect.assertions(3)
+      expect.assertions(5)
 
-      const scope = nock('http://localhost').get('/comments').reply(400)
+      const endpoint = vi.fn(() => new Response(null, { status: 400 }))
+      server.use(http.get('http://localhost/comments', endpoint))
 
       try {
         await YF.get('http://localhost/comments')
       } catch (error) {
         if (error instanceof YF.ResponseError) {
           expect(error.name).toBe('ResponseError')
+          expect(error.message).toBe('Request failed with status code 400')
           expect(error.response).toBeInstanceOf(Response)
           expect(error.response.status).toBe(400)
         }
       }
 
-      scope.done()
+      expect(endpoint).toHaveBeenCalledTimes(1)
     })
   })
 
   describe('POST', () => {
     test('should perform success post `json` request', async () => {
-      const scope = nock('http://localhost')
-        .matchHeader('content-type', 'application/json')
-        .post('/comments', { user: 'test' })
-        .reply(200, 'ok')
+      expect.assertions(4)
+
+      const endpoint = vi.fn<Parameters<ResponseResolver>>(
+        async ({ request }) => {
+          expect(request.headers.get('content-type')).toBe('application/json')
+          expect(await request.json()).toEqual({ user: 'test' })
+
+          return new Response('ok')
+        }
+      )
+
+      server.use(http.post('http://localhost/comments', endpoint))
 
       const result = await YF.post('http://localhost/comments', {
         json: { user: 'test' },
       }).text()
 
       expect(result).toBe('ok')
-      scope.done()
+      expect(endpoint).toHaveBeenCalledTimes(1)
     })
 
     test('should perform success post `formData` request', async () => {
-      const scope = nock('http://localhost')
-        .matchHeader('content-type', /^multipart\/form-data;/)
-        .post('/comments', /form-data; name="user"[\r\n]*test/)
-        .reply(200, 'ok')
+      expect.assertions(4)
+
+      const endpoint = vi.fn<Parameters<ResponseResolver>>(
+        async ({ request }) => {
+          expect(request.headers.get('content-type')).toMatch(
+            /^multipart\/form-data;/
+          )
+
+          expect(await request.text()).toMatch(
+            /form-data; name="user"[\r\n]*test/
+          )
+
+          return new Response('ok')
+        }
+      )
+
+      server.use(http.post('http://localhost/comments', endpoint))
 
       const body = new FormData()
       body.append('user', 'test')
@@ -556,26 +646,34 @@ describe('Methods', () => {
       }).text()
 
       expect(result).toBe('ok')
-      scope.done()
+      expect(endpoint).toHaveBeenCalledTimes(1)
     })
 
     test('should perform success post `text` request', async () => {
-      const scope = nock('http://localhost')
-        .post('/comments', 'data')
-        .reply(200, 'ok')
+      expect.assertions(3)
+
+      const endpoint = vi.fn<Parameters<ResponseResolver>>(
+        async ({ request }) => {
+          expect(await request.text()).toBe('data')
+          return new Response('ok')
+        }
+      )
+
+      server.use(http.post('http://localhost/comments', endpoint))
 
       const result = await YF.post('http://localhost/comments', {
         body: 'data',
       }).text()
 
       expect(result).toBe('ok')
-      scope.done()
+      expect(endpoint).toHaveBeenCalledTimes(1)
     })
 
     test('should throw `ResponseError` on failed post request', async () => {
-      expect.assertions(3)
+      expect.assertions(4)
 
-      const scope = nock('http://localhost').post('/comments').reply(400)
+      const endpoint = vi.fn(() => new Response(null, { status: 400 }))
+      server.use(http.post('http://localhost/comments', endpoint))
 
       try {
         await YF.post('http://localhost/comments')
@@ -587,30 +685,51 @@ describe('Methods', () => {
         }
       }
 
-      scope.done()
+      expect(endpoint).toHaveBeenCalledTimes(1)
     })
   })
 
   describe('PUT', () => {
     test('should perform success put `json` request', async () => {
-      const scope = nock('http://localhost')
-        .matchHeader('content-type', 'application/json')
-        .put('/comments', { user: 'test' })
-        .reply(200, 'ok')
+      expect.assertions(4)
+
+      const endpoint = vi.fn<Parameters<ResponseResolver>>(
+        async ({ request }) => {
+          expect(request.headers.get('content-type')).toBe('application/json')
+          expect(await request.json()).toEqual({ user: 'test' })
+
+          return new Response('ok')
+        }
+      )
+
+      server.use(http.put('http://localhost/comments', endpoint))
 
       const result = await YF.put('http://localhost/comments', {
         json: { user: 'test' },
       }).text()
 
       expect(result).toBe('ok')
-      scope.done()
+      expect(endpoint).toHaveBeenCalledTimes(1)
     })
 
     test('should perform success put `formData` request', async () => {
-      const scope = nock('http://localhost')
-        .matchHeader('content-type', /^multipart\/form-data;/)
-        .put('/comments', /form-data; name="user"[\r\n]*test/)
-        .reply(200, 'ok')
+      expect.assertions(4)
+
+      const endpoint = vi.fn<Parameters<ResponseResolver>>(
+        async ({ request }) => {
+          expect(request.headers.get('content-type')).toMatch(
+            /^multipart\/form-data;/
+          )
+
+          expect(await request.text()).toMatch(
+            /form-data; name="user"[\r\n]*test/
+          )
+
+          return new Response('ok')
+        }
+      )
+
+      server.use(http.put('http://localhost/comments', endpoint))
 
       const body = new FormData()
       body.append('user', 'test')
@@ -620,26 +739,34 @@ describe('Methods', () => {
       }).text()
 
       expect(result).toBe('ok')
-      scope.done()
+      expect(endpoint).toHaveBeenCalledTimes(1)
     })
 
     test('should perform success put `text` request', async () => {
-      const scope = nock('http://localhost')
-        .put('/comments', 'data')
-        .reply(200, 'ok')
+      expect.assertions(3)
+
+      const endpoint = vi.fn<Parameters<ResponseResolver>>(
+        async ({ request }) => {
+          expect(await request.text()).toBe('data')
+          return new Response('ok')
+        }
+      )
+
+      server.use(http.put('http://localhost/comments', endpoint))
 
       const result = await YF.put('http://localhost/comments', {
         body: 'data',
       }).text()
 
       expect(result).toBe('ok')
-      scope.done()
+      expect(endpoint).toHaveBeenCalledTimes(1)
     })
 
     test('should throw `ResponseError` on failed put request', async () => {
-      expect.assertions(3)
+      expect.assertions(4)
 
-      const scope = nock('http://localhost').put('/comments').reply(400)
+      const endpoint = vi.fn(() => new Response(null, { status: 400 }))
+      server.use(http.put('http://localhost/comments', endpoint))
 
       try {
         await YF.put('http://localhost/comments')
@@ -651,30 +778,51 @@ describe('Methods', () => {
         }
       }
 
-      scope.done()
+      expect(endpoint).toHaveBeenCalledTimes(1)
     })
   })
 
   describe('PATCH', () => {
     test('should perform success patch `json` request', async () => {
-      const scope = nock('http://localhost')
-        .matchHeader('content-type', 'application/json')
-        .patch('/comments', { user: 'test' })
-        .reply(200, 'ok')
+      expect.assertions(4)
+
+      const endpoint = vi.fn<Parameters<ResponseResolver>>(
+        async ({ request }) => {
+          expect(request.headers.get('content-type')).toBe('application/json')
+          expect(await request.json()).toEqual({ user: 'test' })
+
+          return new Response('ok')
+        }
+      )
+
+      server.use(http.patch('http://localhost/comments', endpoint))
 
       const result = await YF.patch('http://localhost/comments', {
         json: { user: 'test' },
       }).text()
 
       expect(result).toBe('ok')
-      scope.done()
+      expect(endpoint).toHaveBeenCalledTimes(1)
     })
 
     test('should perform success patch `formData` request', async () => {
-      const scope = nock('http://localhost')
-        .matchHeader('content-type', /^multipart\/form-data;/)
-        .patch('/comments', /form-data; name="user"[\r\n]*test/)
-        .reply(200, 'ok')
+      expect.assertions(4)
+
+      const endpoint = vi.fn<Parameters<ResponseResolver>>(
+        async ({ request }) => {
+          expect(request.headers.get('content-type')).toMatch(
+            /^multipart\/form-data;/
+          )
+
+          expect(await request.text()).toMatch(
+            /form-data; name="user"[\r\n]*test/
+          )
+
+          return new Response('ok')
+        }
+      )
+
+      server.use(http.patch('http://localhost/comments', endpoint))
 
       const body = new FormData()
       body.append('user', 'test')
@@ -684,26 +832,34 @@ describe('Methods', () => {
       }).text()
 
       expect(result).toBe('ok')
-      scope.done()
+      expect(endpoint).toHaveBeenCalledTimes(1)
     })
 
     test('should perform success patch `text` request', async () => {
-      const scope = nock('http://localhost')
-        .patch('/comments', 'data')
-        .reply(200, 'ok')
+      expect.assertions(3)
+
+      const endpoint = vi.fn<Parameters<ResponseResolver>>(
+        async ({ request }) => {
+          expect(await request.text()).toBe('data')
+          return new Response('ok')
+        }
+      )
+
+      server.use(http.patch('http://localhost/comments', endpoint))
 
       const result = await YF.patch('http://localhost/comments', {
         body: 'data',
       }).text()
 
       expect(result).toBe('ok')
-      scope.done()
+      expect(endpoint).toHaveBeenCalledTimes(1)
     })
 
     test('should throw `ResponseError` on failed patch request', async () => {
-      expect.assertions(3)
+      expect.assertions(4)
 
-      const scope = nock('http://localhost').patch('/comments').reply(400)
+      const endpoint = vi.fn(() => new Response(null, { status: 400 }))
+      server.use(http.patch('http://localhost/comments', endpoint))
 
       try {
         await YF.patch('http://localhost/comments')
@@ -715,26 +871,26 @@ describe('Methods', () => {
         }
       }
 
-      scope.done()
+      expect(endpoint).toHaveBeenCalledTimes(1)
     })
   })
 
   describe('DELETE', () => {
     test('should perform success delete request', async () => {
-      const scope = nock('http://localhost')
-        .delete('/comments/1')
-        .reply(200, 'ok')
+      const endpoint = vi.fn(() => new Response('ok'))
+      server.use(http.delete('http://localhost/comments/1', endpoint))
 
       const result = await YF.delete('http://localhost/comments/1').text()
 
       expect(result).toBe('ok')
-      scope.done()
+      expect(endpoint).toHaveBeenCalledTimes(1)
     })
 
     test('should throw `ResponseError` on failed delete request', async () => {
-      expect.assertions(3)
+      expect.assertions(4)
 
-      const scope = nock('http://localhost').delete('/comments/1').reply(400)
+      const endpoint = vi.fn(() => new Response(null, { status: 400 }))
+      server.use(http.delete('http://localhost/comments/1', endpoint))
 
       try {
         await YF.delete('http://localhost/comments/1')
@@ -746,24 +902,26 @@ describe('Methods', () => {
         }
       }
 
-      scope.done()
+      expect(endpoint).toHaveBeenCalledTimes(1)
     })
   })
 
   describe('HEAD', () => {
     test('should perform success head request', async () => {
-      const scope = nock('http://localhost').head('/comments/1').reply(200)
+      const endpoint = vi.fn(() => new Response())
+      server.use(http.head('http://localhost/comments/1', endpoint))
 
       const response = await YF.head('http://localhost/comments/1')
 
       expect(response.status).toBe(200)
-      scope.done()
+      expect(endpoint).toHaveBeenCalledTimes(1)
     })
 
     test('should throw `ResponseError` on failed head request', async () => {
-      expect.assertions(3)
+      expect.assertions(4)
 
-      const scope = nock('http://localhost').head('/comments/1').reply(400)
+      const endpoint = vi.fn(() => new Response(null, { status: 400 }))
+      server.use(http.head('http://localhost/comments/1', endpoint))
 
       try {
         await YF.head('http://localhost/comments/1')
@@ -775,20 +933,19 @@ describe('Methods', () => {
         }
       }
 
-      scope.done()
+      expect(endpoint).toHaveBeenCalledTimes(1)
     })
   })
 })
 
 test('receive voided response', async () => {
-  const scope = nock('http://localhost')
-    .get('/comments')
-    .reply(200, [1, 2, 3, 4])
+  const endpoint = vi.fn(() => Response.json([1, 2, 3, 4]))
 
+  server.use(http.get('http://localhost/comments', endpoint))
   const result = await YF.get('http://localhost/comments').void()
 
   expect(result).toEqual(undefined)
-  scope.done()
+  expect(endpoint).toHaveBeenCalledTimes(1)
 })
 
 test('default serialize', () => {
@@ -810,14 +967,91 @@ test('default serialize', () => {
 })
 
 test('change base', async () => {
-  const scope = nock('http://example.com').get('/foo').reply(200)
+  const endpoint = vi.fn(() => new Response())
+  server.use(http.get('http://example.com/foo', endpoint))
+
   await YF.get('/foo', { base: 'http://example.com' })
 
-  scope.done()
+  expect(endpoint).toHaveBeenCalledTimes(1)
 })
 
 test('throw if no base', async () => {
   await expect(YF.get('/foo')).rejects.toThrowError(
     new TypeError('Invalid URL')
   )
+})
+
+test('extend headers', async () => {
+  const endpoint1 = vi.fn<Parameters<ResponseResolver>>(({ request }) =>
+    request.headers.get('x-from') === 'website'
+      ? Response.json([])
+      : Response.error()
+  )
+
+  const endpoint2 = vi.fn<Parameters<ResponseResolver>>(({ request }) =>
+    request.headers.get('x-from') === 'website' &&
+    request.headers.get('authorization') === 'Bearer token'
+      ? new Response()
+      : Response.error()
+  )
+
+  server.use(
+    http.get('http://localhost/posts', endpoint1),
+    http.post('http://localhost/posts', endpoint2)
+  )
+
+  const instance = YF.create({
+    headers: { 'x-from': 'website' },
+  })
+
+  const authorized = instance.extend({
+    headers: { Authorization: 'Bearer token' },
+  })
+
+  const res1 = await instance.get('http://localhost/posts').json()
+  expect(res1).toEqual([])
+
+  const res2 = await authorized.post('http://localhost/posts').void()
+  expect(res2).toEqual(undefined)
+
+  expect(endpoint1).toHaveBeenCalledTimes(1)
+  expect(endpoint2).toHaveBeenCalledTimes(1)
+})
+
+test('extend resource', async () => {
+  expect.assertions(8)
+
+  const listEndpoint = vi.fn(() => Response.json([]))
+  const detailsEndpoint = vi.fn(() => Response.json({ title: 'Hello' }))
+
+  const createEndpoint = vi.fn<Parameters<ResponseResolver>>(
+    async ({ request }) => {
+      expect(await request.json()).toEqual({ title: 'Hello' })
+      return new Response('ok')
+    }
+  )
+
+  server.use(
+    http.get('http://localhost/posts', listEndpoint),
+    http.get('http://localhost/posts/1', detailsEndpoint),
+    http.post('http://localhost/posts', createEndpoint)
+  )
+
+  const instance = YF.create({ resource: 'http://localhost' })
+  const res1 = await instance.get('/posts').json()
+  expect(res1).toEqual([])
+
+  const postsApi = instance.extend({ resource: '/posts' })
+  const res2 = await postsApi.get().json()
+  expect(res2).toEqual([])
+
+  const res3 = await postsApi.post({ json: { title: 'Hello' } }).text()
+  expect(res3).toBe('ok')
+
+  const res4 = await postsApi.get('/1').json()
+  expect(res4).toEqual({ title: 'Hello' })
+
+  expect(listEndpoint).toHaveBeenCalledTimes(2)
+  expect(createEndpoint).toHaveBeenCalledTimes(1)
+  expect(detailsEndpoint).toHaveBeenCalledTimes(1)
 })
