@@ -1,3 +1,5 @@
+/// <reference types="../env.d.ts" />
+
 interface SearchParams extends Record<string, any> {}
 
 interface Payload {
@@ -257,16 +259,14 @@ function request<P extends Payload>(
     .then(options.onResponse)
     .then(options.onSuccess, options.onFailure) as ResponsePromise<P>
 
-  for (const [key, value] of Object.entries(CONTENT_TYPES) as Array<
-    [keyof BodyMethods, string]
-  >) {
+  Object.entries(CONTENT_TYPES).forEach(([key, value]) => {
     promise[key] = () => {
       options.headers.set('accept', value)
       return promise
         .then((result) => (key === 'void' ? undefined : result.clone()[key]()))
         .then((parsed) => (key === 'json' ? options.onJSON(parsed) : parsed))
     }
-  }
+  })
 
   return promise
 }
