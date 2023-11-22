@@ -305,14 +305,14 @@ function create<P extends Payload>(baseOptions: Options<P> = {}): Instance<P> {
 const { get, post, put, patch, head, delete: _delete } = create()
 
 export {
-  ResponsePromise,
-  Payload,
-  Options,
-  Instance,
-  Response,
+  type ResponsePromise,
+  type Payload,
+  type Options,
+  type Instance,
+  type Response,
+  type Serialize,
   ResponseError,
   TimeoutError,
-  Serialize,
   serialize,
   request,
   create,

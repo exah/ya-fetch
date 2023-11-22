@@ -1,11 +1,11 @@
 {
   "compilerOptions": {
-    "target": "es6",
-    "lib": ["es2017", "es6", "dom"],
+    "target": "es2020",
     "module": "Node16",
     "moduleResolution": "Node16",
     "esModuleInterop": true,
     "skipLibCheck": true,
+    "isolatedModules": true,
 
     /* Linting */
     "strict": true,
