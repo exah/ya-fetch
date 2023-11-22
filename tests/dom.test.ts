@@ -2,22 +2,31 @@
  * @vitest-environment jsdom
  */
 
-import { afterEach, test } from 'vitest'
-import nock from 'nock'
+import { test, expect, beforeAll, afterAll, afterEach, vi } from 'vitest'
+import { http } from 'msw'
+import { setupServer } from 'msw/node'
 import * as YF from '../src/index.js'
 
-afterEach(() => nock.cleanAll())
+const server = setupServer()
+
+beforeAll(() => server.listen())
+afterAll(() => server.close())
+afterEach(() => server.resetHandlers())
 
 test('use location.origin as base', async () => {
-  const scope = nock('http://localhost:3000').get('/foo').reply(200)
+  const endpoint = vi.fn(() => new Response())
+  server.use(http.get('http://localhost:3000/foo', endpoint))
+
   await YF.get('/foo')
 
-  scope.done()
+  expect(endpoint).toHaveBeenCalledTimes(1)
 })
 
 test('change base', async () => {
-  const scope = nock('http://example.com').get('/foo').reply(200)
+  const endpoint = vi.fn(() => new Response())
+  server.use(http.get('http://example.com/foo', endpoint))
+
   await YF.get('/foo', { base: 'http://example.com' })
 
-  scope.done()
+  expect(endpoint).toHaveBeenCalledTimes(1)
 })
