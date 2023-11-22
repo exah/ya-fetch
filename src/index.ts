@@ -198,7 +198,10 @@ class ResponseError<P extends Payload = Payload> extends Error {
   name = 'ResponseError'
   response: Response<P>
 
-  constructor(response: Response<P>, message = response.statusText) {
+  constructor(
+    response: Response<P>,
+    message: string = `Request failed with status code ${response.status}`
+  ) {
     super(message)
     this.response = response
   }

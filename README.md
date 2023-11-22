@@ -79,7 +79,7 @@ fetch('http://example.com/posts', {
     return res.json()
   }
 
-  throw new Error('Oops')
+  throw new Error('Request failed')
 })
 ```
 
@@ -105,7 +105,7 @@ fetch('http://example.com/posts?id=1').then((res) => {
     return res.json()
   }
 
-  throw new Error('Oops')
+  throw new Error('Request failed')
 })
 ```
 
@@ -193,7 +193,7 @@ fetch('http://example.com/posts', {
       return res.json()
     }
 
-    throw new Error('Oops')
+    throw new Error('Request failed')
   })
   .catch((error) => {
     if (error.name === 'AbortError') {
