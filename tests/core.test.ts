@@ -7,7 +7,7 @@ import {
   expect,
   vi,
 } from 'vitest'
-import { rest, type ResponseResolver } from 'msw'
+import { http, type ResponseResolver } from 'msw'
 import { setupServer } from 'msw/node'
 import queryString from 'query-string'
 import * as YF from '../src/index.js'
@@ -35,7 +35,7 @@ describe('Instance', () => {
   test('should prepend resource with create options', async () => {
     const endpoint = vi.fn(() => Response.json([1, 2, 3, 4]))
 
-    server.use(rest.get('http://localhost/comments', endpoint))
+    server.use(http.get('http://localhost/comments', endpoint))
 
     const api = YF.create({ resource: 'http://localhost' })
     const result = await api.get('/comments').json<number[]>()
@@ -47,7 +47,7 @@ describe('Instance', () => {
   test('should extend instance with new options', async () => {
     const endpoint = vi.fn(() => new Response())
 
-    server.use(rest.get('http://localhost/comments', endpoint))
+    server.use(http.get('http://localhost/comments', endpoint))
 
     const base = YF.create({ resource: 'http://localhost' })
 
@@ -69,7 +69,7 @@ describe('Instance', () => {
   test('default request method should be GET', async () => {
     const endpoint = vi.fn(() => Response.json([1, 2, 3, 4]))
 
-    server.use(rest.get('http://localhost/comments', endpoint))
+    server.use(http.get('http://localhost/comments', endpoint))
 
     const result = await YF.get('http://localhost/comments').json()
 
@@ -88,7 +88,7 @@ describe('Instance', () => {
       return new Response('Invalid request', { status: 400 })
     })
 
-    server.use(rest.get('http://localhost/comments', endpoint))
+    server.use(http.get('http://localhost/comments', endpoint))
 
     const result = await YF.get('http://localhost/comments', {
       params: { userId: 1 },

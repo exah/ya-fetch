@@ -3,7 +3,7 @@
  */
 
 import { test, expect, beforeAll, afterAll, afterEach, vi } from 'vitest'
-import { rest } from 'msw'
+import { http } from 'msw'
 import { setupServer } from 'msw/node'
 import * as YF from '../src/index.js'
 
@@ -16,7 +16,7 @@ afterEach(() => server.resetHandlers())
 
 test.only('use location.origin as base', async () => {
   const endpoint = vi.fn(() => new Response())
-  server.use(rest.get('http://localhost:3000/foo', endpoint))
+  server.use(http.get('http://localhost:3000/foo', endpoint))
 
   await YF.get('/foo')
 
@@ -25,7 +25,7 @@ test.only('use location.origin as base', async () => {
 
 test('change base', async () => {
   const endpoint = vi.fn(() => new Response())
-  server.use(rest.get('http://example.com/foo', endpoint))
+  server.use(http.get('http://example.com/foo', endpoint))
 
   await YF.get('/foo', { base: 'http://example.com' })
 

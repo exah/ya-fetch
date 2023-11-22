@@ -1,3 +1,5 @@
+/// <reference types="../env.d.ts" />
+
 interface SearchParams extends Record<string, any> {}
 
 interface Payload {
@@ -158,7 +160,7 @@ const DEFAULTS: RequiredOptions<Payload> = {
   onJSON: (json) => json,
 }
 
-const serialize = (input: SearchParams): URLSearchParams => {
+function serialize(input: SearchParams): URLSearchParams {
   const params = new URLSearchParams()
 
   Object.entries(input).forEach(([key, value]) => {
@@ -214,7 +216,10 @@ interface ResponseError<P extends Payload = Payload> extends Error {
 class ResponseError<P extends Payload = Payload> extends Error {
   name = 'ResponseError'
 
-  constructor(response: Response<P>, message = response.statusText) {
+  constructor(
+    response: Response<P>,
+    message: string = `Request failed with status code ${response.status}`
+  ) {
     super(message)
     this.response = response
   }
