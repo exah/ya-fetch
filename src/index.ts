@@ -28,7 +28,7 @@ interface Serialize {
 
 interface RequestMethod<P extends Payload> {
   <T extends P>(
-    resource?: number | string | RequestMethodOptions<T>,
+    resource?: string | RequestMethodOptions<T>,
     options?: RequestMethodOptions<T>
   ): ResponsePromise<T>
 }
