@@ -24,11 +24,11 @@ $ npm install --save ya-fetch
 
 ```html
 <script type="module">
-  import * as YF from 'https://unpkg.com/ya-fetch/esm/min.js'
+  import * as YF from 'https://esm.sh/ya-fetch'
 </script>
 ```
 
-For readable version import from `https://unpkg.com/ya-fetch/esm/index.js`.
+For readable version import from `https://esm.sh/ya-fetch/esm/index.js?raw`.
 
 [🔗 Playground on CodePen](https://codepen.io/exah/pen/gOKRYjW?editors=0012).
 
@@ -43,7 +43,7 @@ For readable version import from `https://unpkg.com/ya-fetch/esm/index.js`.
 ### Import module
 
 ```ts
-import * as YF from 'ya-fetch' // or from 'https://unpkg.com/ya-fetch/esm/min.js' in browsers
+import * as YF from 'ya-fetch' // or from 'https://esm.sh/ya-fetch' in browsers
 ```
 
 ### Create an instance
