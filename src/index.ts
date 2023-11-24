@@ -155,6 +155,7 @@ const DEFAULTS: RequiredOptions<Payload> = {
   },
   retry: (response) =>
     response.attempt < 2 &&
+    response.options.method === 'GET' &&
     [408, 413, 429, 500, 502, 503, 504].includes(response.status),
   delay: (response) => 0.3 * 2 ** response.attempt * 1000,
   onJSON: (json) => json,

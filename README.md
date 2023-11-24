@@ -213,7 +213,7 @@ fetch('http://example.com/posts', {
 
 ### Auto retry
 
-Use [retry](#retrycount-number-response-response-boolean) option to specify a condition for automatic retrying on failed request. By default retries twice on status codes: `408`, `413`, `429`, `500`, `502`, `503`, `504`.
+Use [retry](#retrycount-number-response-response-boolean) option to specify a condition for automatic retrying on failed request. By default retries twice on `GET` and status codes: `408`, `413`, `429`, `500`, `502`, `503`, `504`.
 
 ```ts
 const retriable = api.extend({
