@@ -9,6 +9,7 @@ interface Payload {
 
 interface Response<P extends Payload = Payload> extends globalThis.Response {
   options: RequestOptions<P>
+  attempt: number
 }
 
 interface BodyMethods {
@@ -94,6 +95,14 @@ interface RequiredOptions<P extends Payload> extends RequestInit {
     error: ResponseError<P> | TimeoutError | Error
   ): Promise<Response<P>> | Response<P>
   /**
+   * Condition for retrying failed requests
+   */
+  retry(response: Response<P>): boolean | void
+  /**
+   * Customize retry delay
+   */
+  delay(response: Response<P>): number
+  /**
    * Transform parsed JSON from response.
    */
   onJSON(input: unknown): Promise<unknown> | unknown
@@ -136,36 +145,43 @@ const DEFAULTS: RequiredOptions<Payload> = {
       ? location.origin
       : undefined,
   highWaterMark: 1024 * 1024 * 10, // 10mb
-  onRequest: () => {},
-  onResponse(result) {
-    if (result.ok) {
-      return result
+  onRequest() {},
+  onResponse(response) {
+    if (response.ok) {
+      return response
     }
 
-    throw new ResponseError(result)
+    throw new ResponseError(response)
   },
+  retry() {},
+  delay: (response) => 0.3 * 2 ** response.attempt * 1000,
   onJSON: (json) => json,
 }
+
+const autoRetry =
+  (times = 2, status = [408, 413, 429, 500, 502, 503, 504]) =>
+  (input: Response) =>
+    input.attempt < times && status.includes(input.status)
 
 function serialize(input: SearchParams): URLSearchParams {
   const params = new URLSearchParams()
 
-  for (const [key, value] of Object.entries(input)) {
+  Object.entries(input).forEach(([key, value]) => {
     if (Array.isArray(value)) {
       value.forEach((item) => params.append(key, item))
     } else if (value != null) {
       params.append(key, input[key])
     }
-  }
+  })
 
   return params
 }
 
-const mergeMaps = <Init, Request extends URLSearchParams | Headers>(
+function mergeMaps<Init, Request extends URLSearchParams | Headers>(
   M: new (init?: Init) => Request,
   left?: Init,
   right?: Init
-): Request => {
+): Request {
   const result = new M(left)
 
   new M(right).forEach((value, key) => result.append(key, value))
@@ -196,9 +212,12 @@ const mergeOptions = <A extends Options<Payload>, B extends Options<Payload>>(
     ),
   })
 
+interface ResponseError<P extends Payload = Payload> extends Error {
+  response: Response<P>
+}
+
 class ResponseError<P extends Payload = Payload> extends Error {
   name = 'ResponseError'
-  response: Response<P>
 
   constructor(
     response: Response<P>,
@@ -217,12 +236,13 @@ class TimeoutError extends Error {
   }
 }
 
-function request<P extends Payload>(
-  baseOptions: Options<P>
-): ResponsePromise<P> {
-  const options: RequestOptions<P> = mergeOptions(DEFAULTS, baseOptions)
-
+const request = <P extends Payload>(
+  baseOptions: Options<P>,
+  attempt: number = 0
+): ResponsePromise<P> => {
   let timerID: ReturnType<typeof setTimeout>
+
+  const options: RequestOptions<P> = mergeOptions(DEFAULTS, baseOptions)
   const promise = new Promise<Response<P>>((resolve, reject) => {
     const url = new URL(options.resource, options.base)
     url.search += options.params
@@ -252,10 +272,20 @@ function request<P extends Payload>(
 
     Promise.resolve(options.onRequest(url, options))
       .then(() => fetch(url, options))
-      .then((response) => Object.assign(response, { options }))
+      .then((response) => Object.assign(response, { options, attempt }))
       .then(resolve, reject)
       .then(() => clearTimeout(timerID))
   })
+    .then((response) =>
+      options.retry(response)
+        ? new Promise<Response<P>>((resolve) => {
+            setTimeout(
+              () => resolve(request(options, attempt + 1)),
+              options.delay(response)
+            )
+          })
+        : response
+    )
     .then(options.onResponse)
     .then(options.onSuccess, options.onFailure) as ResponsePromise<P>
 
@@ -271,7 +301,9 @@ function request<P extends Payload>(
   return promise
 }
 
-function create<P extends Payload>(baseOptions: Options<P> = {}): Instance<P> {
+const create = <P extends Payload>(
+  baseOptions: Options<P> = {}
+): Instance<P> => {
   const extend = <T extends P>(options: Options<T>) =>
     create<T>(mergeOptions(baseOptions, options))
 
@@ -283,21 +315,19 @@ function create<P extends Payload>(baseOptions: Options<P> = {}): Instance<P> {
           baseOptions,
           Object.assign(
             { method },
-            typeof resource === 'string' || typeof resource === 'number'
-              ? { resource }
-              : resource,
+            typeof resource === 'string' ? { resource } : resource,
             options
           )
         )
       )
 
   return {
-    get: createMethod('GET'),
-    post: createMethod('POST'),
-    patch: createMethod('PATCH'),
-    put: createMethod('PUT'),
-    delete: createMethod('DELETE'),
-    head: createMethod('HEAD'),
+    get: createMethod('get'),
+    post: createMethod('post'),
+    patch: createMethod('patch'),
+    put: createMethod('put'),
+    delete: createMethod('delete'),
+    head: createMethod('head'),
     extend,
   }
 }
@@ -321,5 +351,6 @@ export {
   put,
   patch,
   head,
+  autoRetry,
   _delete as delete,
 }

@@ -434,7 +434,7 @@ describe('Response', () => {
         expect(url).toBeInstanceOf(URL)
         expect(url.toString()).toBe(options.resource)
         expect(options.resource).toMatch(/example\.com\/(users|comments)/)
-        expect(options.method).toBe('GET')
+        expect(options.method).toBe('get')
         expect(options.headers.get('x-static')).toEqual('static value')
         expect(options.headers.has('Authorization')).toEqual(false)
 
@@ -1054,4 +1054,64 @@ test('extend resource', async () => {
   expect(listEndpoint).toHaveBeenCalledTimes(2)
   expect(createEndpoint).toHaveBeenCalledTimes(1)
   expect(detailsEndpoint).toHaveBeenCalledTimes(1)
+})
+
+test('auto retry', async () => {
+  const state = {
+    limit: 2,
+    count: 0,
+  }
+
+  const endpoint = vi.fn(() => {
+    if (state.count < state.limit) {
+      state.count += 1
+      return new Response(null, { status: 500 })
+    }
+
+    return new Response('OK')
+  })
+
+  server.use(http.get('http://localhost/comments', endpoint))
+
+  const api = YF.create({
+    resource: 'http://localhost',
+    retry: YF.autoRetry(),
+  })
+
+  const result = await api.get('/comments').text()
+
+  expect(state.count).toBe(state.limit)
+  expect(result).toBe('OK')
+  expect(endpoint).toHaveBeenCalledTimes(3)
+})
+
+test('retry', async () => {
+  const state = {
+    limit: 3,
+    count: 0,
+  }
+
+  const endpoint = vi.fn(() => {
+    if (state.count < state.limit) {
+      state.count += 1
+      return new Response(null, { status: 500 })
+    }
+
+    return new Response('OK')
+  })
+
+  server.use(http.get('http://localhost/comments', endpoint))
+
+  const api = YF.create({
+    resource: 'http://localhost',
+    retry: ({ attempt, status }) => attempt < state.limit && status === 500,
+  })
+
+  const timestamp = Date.now()
+  const result = await api.get('/comments').text()
+
+  expect(Date.now() - timestamp).toBeGreaterThan(2000)
+  expect(state.count).toBe(state.limit)
+  expect(result).toBe('OK')
+  expect(endpoint).toHaveBeenCalledTimes(4)
 })

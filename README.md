@@ -2,13 +2,14 @@
 
 > Super light-weight wrapper around `fetch`
 
-- [x] Only 1.1 kB when minified & gziped
+- [x] Only 1.13 kB when minified & gziped
 - [x] Based on [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) & [AbortController](https://developer.mozilla.org/en-US/docs/Web/API/AbortController)
 - [x] Custom [instance](#create) with options (`headers`, `error` handlers, ...)
 - [x] Exposed response body [methods](#returns-response-promise) (`.json`, `.blob`, ...)
 - [x] First-class [JSON support](#send--receive-json) (automatic serialization, content type headers)
 - [x] [Search params](#params-urlsearchparams--object--string) serialization
 - [x] Global [timeouts](#timeout-number)
+- [x] [Auto retry](#auto-retry)
 - [x] [Works in a browser](#-import-in-a-browser) without a bundler
 - [x] Written in TypeScript
 - [x] Pure ESM module
@@ -209,6 +210,65 @@ fetch('http://example.com/posts', {
 - [`get`](#getbrpostbrpatchbrputbrdeletebrhead)
 - [`options.timeout`](#timeout-number)
 - [`response.json`](#json)
+
+### Auto retry
+
+Use [retry](#retrycount-number-response-response-boolean) option to specify a condition for automatic retrying on failed request.
+
+```ts
+const retriable = api.extend({
+  retry: ({ attempt, status, options }) =>
+    attempt < 5 && status === 503 && options.method === 'GET',
+})
+
+const posts = await retriable.get('/posts').json()
+```
+
+Import `autoRetry` if you want to retry twice on status codes: `408`, `413`, `429`, `500`, `502`, `503`, `504` (recommended by customizable, this is the default).
+
+```ts
+import { autoRetry } from 'ya-fetch'
+
+const retriable = api.extend({
+  retry: autoRetry(), // same as autoRetry(2, [408, 413, 429, 500, 502, 503, 504])
+})
+
+const posts = await retriable.get('/posts').json()
+```
+
+<details><summary>Same code with native <code>fetch</code></summary>
+
+```js
+async function retriable(count = 0) {
+  const response = await fetch('http://example.com/posts', {
+    headers: {
+      accept: 'application/json',
+    },
+  })
+
+  if (attempt < 5 && response.status === 503) {
+    return new Promise((resolve) =>
+      setTimeout(() => resolve(retriable(count + 1)), 0.3 * 2 ** count * 1000)
+    )
+  }
+
+  if (response.ok) {
+    return response.json()
+  }
+
+  throw new Error('Request failed')
+}
+
+const posts = await retriable()
+```
+
+</details>
+
+#### Related
+
+- [`get`](#getbrpostbrpatchbrputbrdeletebrhead)
+- [`options.retry`](#retryresponse-response-boolean)
+- [`options.delay`](#delayresponse-response-number)
 
 ### Provide custom search params serializer
 
@@ -824,6 +884,10 @@ try {
   }
 }
 ```
+
+#### retry?(response: Response): boolean
+
+#### delay?(response: Response): number
 
 #### onRequest?(url: URL, options: RequestOptions): Promise\<void> | void
 
