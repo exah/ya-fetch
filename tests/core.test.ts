@@ -1075,6 +1075,7 @@ test('auto retry', async () => {
 
   const api = YF.create({
     resource: 'http://localhost',
+    retry: YF.autoRetry(),
   })
 
   const result = await api.get('/comments').text()

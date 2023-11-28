@@ -153,13 +153,15 @@ const DEFAULTS: RequiredOptions<Payload> = {
 
     throw new ResponseError(response)
   },
-  retry: (response) =>
-    response.attempt < 2 &&
-    response.options.method === 'GET' &&
-    [408, 413, 429, 500, 502, 503, 504].includes(response.status),
+  retry() {},
   delay: (response) => 0.3 * 2 ** response.attempt * 1000,
   onJSON: (json) => json,
 }
+
+const autoRetry =
+  (times = 2, status = [408, 413, 429, 500, 502, 503, 504]) =>
+  (input: Response) =>
+    input.attempt < times && status.includes(input.status)
 
 function serialize(input: SearchParams): URLSearchParams {
   const params = new URLSearchParams()
@@ -175,11 +177,11 @@ function serialize(input: SearchParams): URLSearchParams {
   return params
 }
 
-const mergeMaps = <Init, Request extends URLSearchParams | Headers>(
+function mergeMaps<Init, Request extends URLSearchParams | Headers>(
   M: new (init?: Init) => Request,
   left?: Init,
   right?: Init
-): Request => {
+): Request {
   const result = new M(left)
 
   new M(right).forEach((value, key) => result.append(key, value))
@@ -349,5 +351,6 @@ export {
   put,
   patch,
   head,
+  autoRetry,
   _delete as delete,
 }

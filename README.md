@@ -213,12 +213,24 @@ fetch('http://example.com/posts', {
 
 ### Auto retry
 
-Use [retry](#retrycount-number-response-response-boolean) option to specify a condition for automatic retrying on failed request. By default retries twice on `GET` and status codes: `408`, `413`, `429`, `500`, `502`, `503`, `504`.
+Use [retry](#retrycount-number-response-response-boolean) option to specify a condition for automatic retrying on failed request.
 
 ```ts
 const retriable = api.extend({
   retry: ({ attempt, status, options }) =>
     attempt < 5 && status === 503 && options.method === 'GET',
+})
+
+const posts = await retriable.get('/posts').json()
+```
+
+Import `autoRetry` if you want to retry twice on status codes: `408`, `413`, `429`, `500`, `502`, `503`, `504` (recommended by customizable, this is the default).
+
+```ts
+import { autoRetry } from 'ya-fetch'
+
+const retriable = api.extend({
+  retry: autoRetry(), // same as autoRetry(2, [408, 413, 429, 500, 502, 503, 504])
 })
 
 const posts = await retriable.get('/posts').json()
