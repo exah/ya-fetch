@@ -115,9 +115,7 @@ interface RequiredOptions<
    * Instance error handler. Use it to throw custom errors
    * or to send information to error tracking service.
    */
-  onFailure?(
-    error: ResponseError<P> | TimeoutError | Error
-  ): Promise<Response<P>> | Response<P>
+  onFailure?(error: unknown): Promise<Response<Payload>> | Response<Payload>
   /**
    * Transform parsed JSON from response.
    */
