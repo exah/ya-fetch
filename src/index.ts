@@ -2,17 +2,21 @@
 
 interface SearchParams extends Record<string, any> {}
 
-interface Payload {
+interface OptionsPayload {
   json?: unknown
   params?: SearchParams | URLSearchParams | string
 }
 
-interface Response<P extends Payload = Payload> extends globalThis.Response {
-  options: RequestOptions<P>
+interface Response<
+  Payload extends OptionsPayload = OptionsPayload,
+  Data = unknown,
+  Input = unknown,
+> extends globalThis.Response {
+  options: RequestOptions<Payload, Data, Input>
 }
 
-interface BodyMethods {
-  json<T>(): Promise<T>
+interface BodyMethods<Data> {
+  json<T = Data>(): Promise<T>
   text(): Promise<string>
   blob(): Promise<Blob>
   arrayBuffer(): Promise<ArrayBuffer>
@@ -20,28 +24,42 @@ interface BodyMethods {
   void(): Promise<void>
 }
 
-interface ResponsePromise<P extends Payload = Payload>
-  extends Promise<Response<P>>,
-    BodyMethods {}
+interface ResponsePromise<
+  Payload extends OptionsPayload = OptionsPayload,
+  Data = unknown,
+  Input = unknown,
+> extends Promise<Response<Payload, Data, Input>>,
+    BodyMethods<Data> {}
+
+interface PartialResponsePromise<
+  Payload extends OptionsPayload = OptionsPayload,
+  Data = unknown,
+  Input = unknown,
+> extends Promise<Response<Payload, Data, Input>>,
+    Partial<BodyMethods<Data>> {}
 
 interface Serialize {
   (params: SearchParams): URLSearchParams | string
 }
 
-interface RequestMethod<P extends Payload> {
-  <T extends P>(
-    resource?: string | RequestMethodOptions<T>,
-    options?: RequestMethodOptions<T>
-  ): ResponsePromise<T>
+interface RequestMethod<Payload extends OptionsPayload, Data, Input> {
+  <T extends OptionsPayload = Payload, D = Data, I = Input>(
+    resource?: string | RequestMethodOptions<T, D, I>,
+    options?: RequestMethodOptions<T, D, I>
+  ): ResponsePromise<T, D, I>
 }
 
-interface RequiredOptions<P extends Payload> extends RequestInit {
+interface RequiredOptions<
+  Payload extends OptionsPayload,
+  Data = unknown,
+  Input = unknown,
+> extends RequestInit {
   /**
    * Base of the request URL, default to `location.origin` if available.
    * Provide a valid url if you want to use relative `resource` path
    * when module loaded in `file://`, `about:blank` or Node.js environment.
    */
-  base?: string
+  base?: URL | string
   /**
    * Part of the request URL
    */
@@ -53,11 +71,11 @@ interface RequiredOptions<P extends Payload> extends RequestInit {
   /**
    * Body for `application/json` type requests, stringified with `JSON.stringify`.
    */
-  json?: P['json']
+  json?: Payload['json']
   /**
    * Search params to append to a request URL.
    */
-  params?: P['params']
+  params?: Payload['params']
   /**
    * Custom search params serializer when `object` passed to `params`.
    * Defaults to internal implementation based on `URLSearchParams`
@@ -77,15 +95,22 @@ interface RequiredOptions<P extends Payload> extends RequestInit {
   /**
    * Use the callback to modify options before a request
    */
-  onRequest(url: URL, options: RequestOptions<P>): Promise<void> | void
+  onRequest(
+    url: URL,
+    options: RequestOptions<Payload, Data, Input>
+  ): Promise<void> | void
   /**
    * Response handler, must handle status codes or throw `ResponseError`
    */
-  onResponse(response: Response<P>): Promise<Response<P>> | Response<P>
+  onResponse(
+    response: Response<Payload>
+  ): Promise<Response<Payload>> | Response<Payload>
   /**
    * Success response handler (usually codes 200-299).
    */
-  onSuccess?(response: Response<P>): Promise<Response<P>> | Response<P>
+  onSuccess?(
+    response: Response<Payload>
+  ): Promise<Response<Payload>> | Response<Payload>
   /**
    * Instance error handler. Use it to throw custom errors
    * or to send information to error tracking service.
@@ -96,29 +121,42 @@ interface RequiredOptions<P extends Payload> extends RequestInit {
   /**
    * Transform parsed JSON from response.
    */
-  onJSON(input: unknown): Promise<unknown> | unknown
+  onJSON(input: Input): Promise<Data> | Data
 }
 
-interface RequestMethodOptions<P extends Payload>
-  extends Omit<Options<P>, 'resource' | 'method'> {}
+interface RequestMethodOptions<Payload extends OptionsPayload, Data, Input>
+  extends Omit<Options<Payload, Data, Input>, 'resource' | 'method'> {}
 
-interface RequestOptions<P extends Payload> extends RequiredOptions<P> {
+interface RequestOptions<
+  Payload extends OptionsPayload = OptionsPayload,
+  Data = unknown,
+  Input = unknown,
+> extends RequiredOptions<Payload, Data, Input> {
   resource: string
   headers: Headers
   params: URLSearchParams
 }
 
-interface Options<P extends Payload = Payload>
-  extends Partial<RequiredOptions<P>> {}
+interface Options<
+  Payload extends OptionsPayload = OptionsPayload,
+  Data = unknown,
+  Input = unknown,
+> extends Partial<RequiredOptions<Payload, Data, Input>> {}
 
-interface Instance<P extends Payload = Payload> {
-  get: RequestMethod<P>
-  post: RequestMethod<P>
-  patch: RequestMethod<P>
-  put: RequestMethod<P>
-  delete: RequestMethod<P>
-  head: RequestMethod<P>
-  extend<T extends P>(options?: Options<T>): Instance<T>
+interface Instance<
+  Payload extends OptionsPayload = OptionsPayload,
+  Data = unknown,
+  Input = unknown,
+> {
+  get: RequestMethod<Payload, Data, Input>
+  post: RequestMethod<Payload, Data, Input>
+  patch: RequestMethod<Payload, Data, Input>
+  put: RequestMethod<Payload, Data, Input>
+  delete: RequestMethod<Payload, Data, Input>
+  head: RequestMethod<Payload, Data, Input>
+  extend<T extends OptionsPayload = Payload, D = Data, I = Input>(
+    options?: Options<T, D, I>
+  ): Instance<T, D, I>
 }
 
 const CONTENT_TYPES = {
@@ -130,7 +168,7 @@ const CONTENT_TYPES = {
   void: '*/*',
 } as const
 
-const DEFAULTS: RequiredOptions<Payload> = {
+const DEFAULTS: RequiredOptions<OptionsPayload> = {
   base:
     typeof location !== 'undefined' && location.origin !== 'null'
       ? location.origin
@@ -181,7 +219,10 @@ const normalizeParams = (
     ? params
     : transform(params)
 
-const mergeOptions = <A extends Options<Payload>, B extends Options<Payload>>(
+const mergeOptions = <
+  A extends Options<OptionsPayload>,
+  B extends Options<OptionsPayload>,
+>(
   left: A,
   right: Partial<B>,
   serialize = right.serialize || left.serialize
@@ -196,8 +237,9 @@ const mergeOptions = <A extends Options<Payload>, B extends Options<Payload>>(
     ),
   })
 
-class ResponseError<P extends Payload = Payload> extends Error {
+class ResponseError<P extends OptionsPayload = OptionsPayload> extends Error {
   name = 'ResponseError'
+  status: number
   response: Response<P>
 
   constructor(
@@ -205,6 +247,7 @@ class ResponseError<P extends Payload = Payload> extends Error {
     message: string = `Request failed with status code ${response.status}`
   ) {
     super(message)
+    this.status = response.status
     this.response = response
   }
 }
@@ -217,47 +260,54 @@ class TimeoutError extends Error {
   }
 }
 
-function request<P extends Payload>(
-  baseOptions: Options<P>
-): ResponsePromise<P> {
-  const options: RequestOptions<P> = mergeOptions(DEFAULTS, baseOptions)
+function request<
+  Payload extends OptionsPayload,
+  Data = unknown,
+  Input = unknown,
+>(
+  baseOptions: Options<Payload, Data, Input>
+): ResponsePromise<Payload, Data, Input>
+function request(baseOptions: Options): PartialResponsePromise {
+  const options: RequestOptions = mergeOptions(DEFAULTS, baseOptions)
 
   let timerID: ReturnType<typeof setTimeout>
-  const promise = new Promise<Response<P>>((resolve, reject) => {
-    const url = new URL(options.resource, options.base)
-    url.search += options.params
+  const promise: PartialResponsePromise = new Promise<Response>(
+    (resolve, reject) => {
+      const url = new URL(options.resource, options.base)
+      url.search += options.params
 
-    if (options.json != null) {
-      options.body = JSON.stringify(options.json)
-      options.headers.set('content-type', CONTENT_TYPES.json)
-    }
-
-    if (options.timeout! > 0) {
-      const controller = new AbortController()
-
-      timerID = setTimeout(() => {
-        reject(new TimeoutError())
-        controller.abort()
-      }, options.timeout)
-
-      if (options.signal != null) {
-        options.signal.addEventListener('abort', () => {
-          clearTimeout(timerID)
-          controller.abort()
-        })
+      if (options.json != null) {
+        options.body = JSON.stringify(options.json)
+        options.headers.set('content-type', CONTENT_TYPES.json)
       }
 
-      options.signal = controller.signal
-    }
+      if (options.timeout! > 0) {
+        const controller = new AbortController()
 
-    Promise.resolve(options.onRequest(url, options))
-      .then(() => fetch(url, options))
-      .then((response) => Object.assign(response, { options }))
-      .then(resolve, reject)
-      .then(() => clearTimeout(timerID))
-  })
+        timerID = setTimeout(() => {
+          reject(new TimeoutError())
+          controller.abort()
+        }, options.timeout)
+
+        if (options.signal != null) {
+          options.signal.addEventListener('abort', () => {
+            clearTimeout(timerID)
+            controller.abort()
+          })
+        }
+
+        options.signal = controller.signal
+      }
+
+      Promise.resolve(options.onRequest(url, options))
+        .then(() => fetch(url, options))
+        .then((response) => Object.assign(response, { options }))
+        .then(resolve, reject)
+        .then(() => clearTimeout(timerID))
+    }
+  )
     .then(options.onResponse)
-    .then(options.onSuccess, options.onFailure) as ResponsePromise<P>
+    .then(options.onSuccess, options.onFailure)
 
   Object.entries(CONTENT_TYPES).forEach(([key, value]) => {
     promise[key] = () => {
@@ -271,12 +321,15 @@ function request<P extends Payload>(
   return promise
 }
 
-function create<P extends Payload>(baseOptions: Options<P> = {}): Instance<P> {
-  const extend = <T extends P>(options: Options<T>) =>
-    create<T>(mergeOptions(baseOptions, options))
+function create<Payload extends OptionsPayload, Data, Input>(
+  baseOptions: Options<Payload, Data, Input> = {}
+): Instance<Payload, Data, Input> {
+  const extend = <T extends OptionsPayload = Payload, D = Data, I = Input>(
+    options: Options<T, D, I>
+  ) => create<T, D, I>(mergeOptions(baseOptions, options))
 
   const createMethod =
-    (method: string): RequestMethod<P> =>
+    (method: string): RequestMethod<Payload, Data, Input> =>
     (resource, options) =>
       request(
         mergeOptions(
@@ -306,7 +359,7 @@ const { get, post, put, patch, head, delete: _delete } = create()
 
 export {
   type ResponsePromise,
-  type Payload,
+  type OptionsPayload as Payload,
   type Options,
   type Instance,
   type Response,

@@ -6,6 +6,7 @@ import {
   test,
   expect,
   vi,
+  assertType,
 } from 'vitest'
 import { http, delay, type ResponseResolver } from 'msw'
 import { setupServer } from 'msw/node'
@@ -131,8 +132,9 @@ describe('Instance', () => {
       onJSON: (parsed: { data: number[] }) => parsed.data,
     })
 
-    const result = await api.get('/comments').json<number[]>()
+    const result = await api.get('/comments').json()
 
+    assertType<number[]>(result)
     expect(result).toEqual([1, 2, 3, 4])
     expect(endpoint).toHaveBeenCalledTimes(1)
   })
