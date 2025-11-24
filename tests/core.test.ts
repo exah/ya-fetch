@@ -8,7 +8,12 @@ import {
   vi,
   assertType,
 } from 'vitest'
-import { http, delay, type ResponseResolver } from 'msw'
+import {
+  http,
+  delay,
+  type ResponseResolver,
+  type HttpResponseResolver,
+} from 'msw'
 import { setupServer } from 'msw/node'
 import queryString from 'query-string'
 import * as YF from '../src/index.js'
@@ -76,7 +81,7 @@ describe('Instance', () => {
   })
 
   test('should transform `params` to query string', async () => {
-    const endpoint = vi.fn<Parameters<ResponseResolver>>(({ request }) => {
+    const endpoint = vi.fn<HttpResponseResolver>(({ request }) => {
       const url = new URL(request.url)
 
       if (url.searchParams.get('userId') === '1') {
@@ -97,7 +102,7 @@ describe('Instance', () => {
   })
 
   test('should merge `params` from instance and transform to query string', async () => {
-    const endpoint = vi.fn<Parameters<ResponseResolver>>(({ request }) => {
+    const endpoint = vi.fn<HttpResponseResolver>(({ request }) => {
       const url = new URL(request.url)
 
       if (
@@ -259,7 +264,7 @@ describe('Instance', () => {
   })
 
   test('should be possible to use custom `serialize` function', async () => {
-    const endpoint = vi.fn<Parameters<ResponseResolver>>(({ request }) => {
+    const endpoint = vi.fn<HttpResponseResolver>(({ request }) => {
       const url = new URL(request.url)
 
       if (
@@ -311,7 +316,7 @@ describe('Response', () => {
       ],
     }
 
-    const endpoint = vi.fn<Parameters<ResponseResolver>>(({ request }) =>
+    const endpoint = vi.fn<HttpResponseResolver>(({ request }) =>
       request.headers.get('accept') === 'application/json'
         ? Response.json(data)
         : Response.error()
@@ -325,7 +330,7 @@ describe('Response', () => {
   })
 
   test('request should return `text`', async () => {
-    const endpoint = vi.fn<Parameters<ResponseResolver>>(({ request }) =>
+    const endpoint = vi.fn<HttpResponseResolver>(({ request }) =>
       request.headers.get('accept') === 'text/*'
         ? new Response('ok')
         : Response.error()
@@ -340,7 +345,7 @@ describe('Response', () => {
   })
 
   test('request should return `arrayBuffer`', async () => {
-    const endpoint = vi.fn<Parameters<ResponseResolver>>(({ request }) =>
+    const endpoint = vi.fn<HttpResponseResolver>(({ request }) =>
       request.headers.get('accept') === '*/*'
         ? new Response('test')
         : Response.error()
@@ -357,7 +362,7 @@ describe('Response', () => {
   })
 
   test('request should return `blob`', async () => {
-    const endpoint = vi.fn<Parameters<ResponseResolver>>(({ request }) =>
+    const endpoint = vi.fn<HttpResponseResolver>(({ request }) =>
       request.headers.get('accept') === '*/*'
         ? new Response('test')
         : Response.error()
@@ -373,14 +378,13 @@ describe('Response', () => {
   })
 
   test('should be possible to set headers with a function', async () => {
-    const commentsEndpoint = vi.fn<Parameters<ResponseResolver>>(
-      ({ request }) =>
-        request.headers.get('Authorization') === 'Bearer token-1'
-          ? new Response()
-          : Response.error()
+    const commentsEndpoint = vi.fn<HttpResponseResolver>(({ request }) =>
+      request.headers.get('Authorization') === 'Bearer token-1'
+        ? new Response()
+        : Response.error()
     )
 
-    const usersEndpoint = vi.fn<Parameters<ResponseResolver>>(({ request }) =>
+    const usersEndpoint = vi.fn<HttpResponseResolver>(({ request }) =>
       request.headers.get('Authorization') === 'Bearer token-2'
         ? new Response()
         : Response.error()
@@ -410,14 +414,13 @@ describe('Response', () => {
   })
 
   test('should be possible to set headers with an async function', async () => {
-    const commentsEndpoint = vi.fn<Parameters<ResponseResolver>>(
-      ({ request }) =>
-        request.headers.get('Authorization') === 'Bearer token-1'
-          ? new Response()
-          : Response.error()
+    const commentsEndpoint = vi.fn<HttpResponseResolver>(({ request }) =>
+      request.headers.get('Authorization') === 'Bearer token-1'
+        ? new Response()
+        : Response.error()
     )
 
-    const usersEndpoint = vi.fn<Parameters<ResponseResolver>>(({ request }) =>
+    const usersEndpoint = vi.fn<HttpResponseResolver>(({ request }) =>
       request.headers.get('Authorization') === 'Bearer token-2'
         ? new Response()
         : Response.error()
@@ -602,14 +605,12 @@ describe('Methods', () => {
     test('should perform success post `json` request', async () => {
       expect.assertions(4)
 
-      const endpoint = vi.fn<Parameters<ResponseResolver>>(
-        async ({ request }) => {
-          expect(request.headers.get('content-type')).toBe('application/json')
-          expect(await request.json()).toEqual({ user: 'test' })
+      const endpoint = vi.fn<HttpResponseResolver>(async ({ request }) => {
+        expect(request.headers.get('content-type')).toBe('application/json')
+        expect(await request.json()).toEqual({ user: 'test' })
 
-          return new Response('ok')
-        }
-      )
+        return new Response('ok')
+      })
 
       server.use(http.post('http://localhost/comments', endpoint))
 
@@ -624,19 +625,17 @@ describe('Methods', () => {
     test('should perform success post `formData` request', async () => {
       expect.assertions(4)
 
-      const endpoint = vi.fn<Parameters<ResponseResolver>>(
-        async ({ request }) => {
-          expect(request.headers.get('content-type')).toMatch(
-            /^multipart\/form-data;/
-          )
+      const endpoint = vi.fn<HttpResponseResolver>(async ({ request }) => {
+        expect(request.headers.get('content-type')).toMatch(
+          /^multipart\/form-data;/
+        )
 
-          expect(await request.text()).toMatch(
-            /form-data; name="user"[\r\n]*test/
-          )
+        expect(await request.text()).toMatch(
+          /form-data; name="user"[\r\n]*test/
+        )
 
-          return new Response('ok')
-        }
-      )
+        return new Response('ok')
+      })
 
       server.use(http.post('http://localhost/comments', endpoint))
 
@@ -654,12 +653,10 @@ describe('Methods', () => {
     test('should perform success post `text` request', async () => {
       expect.assertions(3)
 
-      const endpoint = vi.fn<Parameters<ResponseResolver>>(
-        async ({ request }) => {
-          expect(await request.text()).toBe('data')
-          return new Response('ok')
-        }
-      )
+      const endpoint = vi.fn<HttpResponseResolver>(async ({ request }) => {
+        expect(await request.text()).toBe('data')
+        return new Response('ok')
+      })
 
       server.use(http.post('http://localhost/comments', endpoint))
 
@@ -695,14 +692,12 @@ describe('Methods', () => {
     test('should perform success put `json` request', async () => {
       expect.assertions(4)
 
-      const endpoint = vi.fn<Parameters<ResponseResolver>>(
-        async ({ request }) => {
-          expect(request.headers.get('content-type')).toBe('application/json')
-          expect(await request.json()).toEqual({ user: 'test' })
+      const endpoint = vi.fn<HttpResponseResolver>(async ({ request }) => {
+        expect(request.headers.get('content-type')).toBe('application/json')
+        expect(await request.json()).toEqual({ user: 'test' })
 
-          return new Response('ok')
-        }
-      )
+        return new Response('ok')
+      })
 
       server.use(http.put('http://localhost/comments', endpoint))
 
@@ -717,19 +712,17 @@ describe('Methods', () => {
     test('should perform success put `formData` request', async () => {
       expect.assertions(4)
 
-      const endpoint = vi.fn<Parameters<ResponseResolver>>(
-        async ({ request }) => {
-          expect(request.headers.get('content-type')).toMatch(
-            /^multipart\/form-data;/
-          )
+      const endpoint = vi.fn<HttpResponseResolver>(async ({ request }) => {
+        expect(request.headers.get('content-type')).toMatch(
+          /^multipart\/form-data;/
+        )
 
-          expect(await request.text()).toMatch(
-            /form-data; name="user"[\r\n]*test/
-          )
+        expect(await request.text()).toMatch(
+          /form-data; name="user"[\r\n]*test/
+        )
 
-          return new Response('ok')
-        }
-      )
+        return new Response('ok')
+      })
 
       server.use(http.put('http://localhost/comments', endpoint))
 
@@ -747,12 +740,10 @@ describe('Methods', () => {
     test('should perform success put `text` request', async () => {
       expect.assertions(3)
 
-      const endpoint = vi.fn<Parameters<ResponseResolver>>(
-        async ({ request }) => {
-          expect(await request.text()).toBe('data')
-          return new Response('ok')
-        }
-      )
+      const endpoint = vi.fn<HttpResponseResolver>(async ({ request }) => {
+        expect(await request.text()).toBe('data')
+        return new Response('ok')
+      })
 
       server.use(http.put('http://localhost/comments', endpoint))
 
@@ -788,14 +779,12 @@ describe('Methods', () => {
     test('should perform success patch `json` request', async () => {
       expect.assertions(4)
 
-      const endpoint = vi.fn<Parameters<ResponseResolver>>(
-        async ({ request }) => {
-          expect(request.headers.get('content-type')).toBe('application/json')
-          expect(await request.json()).toEqual({ user: 'test' })
+      const endpoint = vi.fn<HttpResponseResolver>(async ({ request }) => {
+        expect(request.headers.get('content-type')).toBe('application/json')
+        expect(await request.json()).toEqual({ user: 'test' })
 
-          return new Response('ok')
-        }
-      )
+        return new Response('ok')
+      })
 
       server.use(http.patch('http://localhost/comments', endpoint))
 
@@ -810,19 +799,17 @@ describe('Methods', () => {
     test('should perform success patch `formData` request', async () => {
       expect.assertions(4)
 
-      const endpoint = vi.fn<Parameters<ResponseResolver>>(
-        async ({ request }) => {
-          expect(request.headers.get('content-type')).toMatch(
-            /^multipart\/form-data;/
-          )
+      const endpoint = vi.fn<HttpResponseResolver>(async ({ request }) => {
+        expect(request.headers.get('content-type')).toMatch(
+          /^multipart\/form-data;/
+        )
 
-          expect(await request.text()).toMatch(
-            /form-data; name="user"[\r\n]*test/
-          )
+        expect(await request.text()).toMatch(
+          /form-data; name="user"[\r\n]*test/
+        )
 
-          return new Response('ok')
-        }
-      )
+        return new Response('ok')
+      })
 
       server.use(http.patch('http://localhost/comments', endpoint))
 
@@ -840,12 +827,10 @@ describe('Methods', () => {
     test('should perform success patch `text` request', async () => {
       expect.assertions(3)
 
-      const endpoint = vi.fn<Parameters<ResponseResolver>>(
-        async ({ request }) => {
-          expect(await request.text()).toBe('data')
-          return new Response('ok')
-        }
-      )
+      const endpoint = vi.fn<HttpResponseResolver>(async ({ request }) => {
+        expect(await request.text()).toBe('data')
+        return new Response('ok')
+      })
 
       server.use(http.patch('http://localhost/comments', endpoint))
 
@@ -978,19 +963,17 @@ test('change base', async () => {
 })
 
 test('throw if no base', async () => {
-  await expect(YF.get('/foo')).rejects.toThrowError(
-    new TypeError('Invalid URL')
-  )
+  await expect(YF.get('/foo')).rejects.toThrowError(TypeError)
 })
 
 test('extend headers', async () => {
-  const endpoint1 = vi.fn<Parameters<ResponseResolver>>(({ request }) =>
+  const endpoint1 = vi.fn<HttpResponseResolver>(({ request }) =>
     request.headers.get('x-from') === 'website'
       ? Response.json([])
       : Response.error()
   )
 
-  const endpoint2 = vi.fn<Parameters<ResponseResolver>>(({ request }) =>
+  const endpoint2 = vi.fn<HttpResponseResolver>(({ request }) =>
     request.headers.get('x-from') === 'website' &&
     request.headers.get('authorization') === 'Bearer token'
       ? new Response()
@@ -1026,12 +1009,10 @@ test('extend resource', async () => {
   const listEndpoint = vi.fn(() => Response.json([]))
   const detailsEndpoint = vi.fn(() => Response.json({ title: 'Hello' }))
 
-  const createEndpoint = vi.fn<Parameters<ResponseResolver>>(
-    async ({ request }) => {
-      expect(await request.json()).toEqual({ title: 'Hello' })
-      return new Response('ok')
-    }
-  )
+  const createEndpoint = vi.fn<HttpResponseResolver>(async ({ request }) => {
+    expect(await request.json()).toEqual({ title: 'Hello' })
+    return new Response('ok')
+  })
 
   server.use(
     http.get('http://localhost/posts', listEndpoint),
